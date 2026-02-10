@@ -1,5 +1,5 @@
 (executable
  (name main)
  (preprocess (pps ppx_deriving_yojson))
- (modules main auth tasks users admin_tasks admin_tests admin_tests_manage leaderboard runner submissions)
+ (modules main auth tasks users admin_tasks admin_tasks_manage admin_tests admin_tests_manage leaderboard runner submissions cors topics topic_paragraphs)
  (libraries dream caqti-driver-postgresql yojson jwto safepass lwt.unix unix))

@@ -1,0 +1,80 @@
+@use "../../styles/themed-mixins.module.scss" as *;
+
+.page {
+  @include pageScroll;
+  @include container(980px, 16px);
+  padding-top: 18px;
+  padding-bottom: 24px;
+}
+
+.top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.h1 {
+  @include title(22px, 800);
+  @include textColor(#111, #fff);
+}
+
+.sub {
+  @include subtleText();
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.navCard {
+  margin-top: 14px;
+  @include surfaceCard(24px, 16px);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.navBtn {
+  @include pillBtn(40px, 14px, 999px);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.card {
+  margin-top: 14px;
+  @include surfaceCard(24px, 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.h2 {
+  margin-top: 6px;
+  font-weight: 900;
+  font-size: 13px;
+  @include textColor(#111, #fff);
+}
+
+.list {
+  @include subtleText();
+  font-size: 13px;
+  line-height: 1.35;
+  display: grid;
+  gap: 6px;
+}
+
+.item {
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  margin-top: 6px;
+  flex: 0 0 6px;
+
+  @include theme(white) { background: rgba(17,17,17,0.35); }
+  @include theme(black) { background: rgba(255,255,255,0.35); }
+}

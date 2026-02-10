@@ -1,0 +1,117 @@
+@use "../../styles/themed-mixins.module.scss" as *;
+
+.wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.card {
+  width: 100%;
+  max-width: 360px;
+  border-radius: 18px;
+  padding: 18px;
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(12px);
+
+  @include theme(white) {
+    background: rgba(255,255,255,0.8);
+    color: #111;
+  }
+
+  @include theme(black) {
+    background: rgba(20, 24, 34, 0.65);
+    color: #fff;
+  }
+}
+
+.titleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.input {
+  height: 42px;
+  border-radius: 12px;
+  padding: 0 12px;
+
+  @include theme(white) {
+    background: rgba(0,0,0,0.06);
+    color: #111;
+  }
+
+  @include theme(black) {
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+  }
+}
+
+.button {
+  height: 42px;
+  border-radius: 12px;
+  font-weight: 600;
+
+  @include theme(white) {
+    background: #111;
+    color: #fff;
+  }
+
+  @include theme(black) {
+    background: #fff;
+    color: #111;
+  }
+}
+
+.linkRow {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+  font-size: 13px;
+  opacity: 1;
+
+  @include theme(white) {
+    color: #111;
+  }
+
+  @include theme(black) {
+    color: #fff;
+  }
+}
+
+.linkBtn {
+  margin-left: 6px;
+  text-decoration: underline;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+
+  @include theme(white) {
+    color: #111;
+  }
+
+  @include theme(black) {
+    color: #fff;
+  }
+}
+
+
+.error {
+  font-size: 13px;
+  color: #ff6b6b;
+}

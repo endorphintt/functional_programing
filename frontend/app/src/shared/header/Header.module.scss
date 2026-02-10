@@ -1,0 +1,141 @@
+@use "../../styles/themed-mixins.module.scss" as *;
+
+.header {
+  height: 56px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0 16px;
+}
+
+.brand {
+  justify-self: start;
+  font-size: 18px;
+  font-weight: 700;
+
+  @include theme(white) { color: #111; }
+  @include theme(black) { color: #fff; }
+}
+
+.center {
+  justify-self: center;
+}
+
+.nav {
+  display: flex;
+  gap: 10px;
+}
+
+.navBtn {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 18px;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.18);
+
+  @include theme(white) {
+    background: rgba(255,255,255,0.55);
+    color: #111;
+  }
+
+  @include theme(black) {
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+  }
+}
+
+.right {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.iconBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  display: flex;
+  flex: 0 0 40px;
+  align-items: center;
+  justify-content: center;
+
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.18);
+
+  @include theme(white) {
+    background: rgba(255,255,255,0.55);
+  }
+
+  @include theme(black) {
+    background: rgba(255,255,255,0.10);
+  }
+}
+
+.adminBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+padding: 0 14px;
+  border-radius: 20px;
+  font-weight: 600;
+
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.18);
+
+  @include theme(white) {
+    background: rgba(255,255,255,0.55);
+    color: #111;
+  }
+
+  @include theme(black) {
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+  }
+}
+
+.theme {
+  display: flex;
+  gap: 10px;
+}
+
+.theme__button {
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  display: flex;
+  flex: 0 0 40px;
+  justify-content: center;
+  align-items: center;
+
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.moon {
+  background-color: #000;
+}
+
+.sun {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.current {
+  box-shadow: 0 0 0 2px rgba(120, 170, 255, 0.7);
+}
+
+.moonIcon {
+  filter: invert(1);
+}

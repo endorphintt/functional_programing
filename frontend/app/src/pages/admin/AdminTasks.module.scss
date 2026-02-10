@@ -1,0 +1,189 @@
+@use "../../styles/themed-mixins.module.scss" as *;
+
+.page {
+  @include pageScroll;
+  @include container(980px, 16px);
+  padding-top: 18px;
+  padding-bottom: 24px;
+}
+
+.top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.h1 {
+  @include title(22px, 800);
+  @include textColor(#111, #fff);
+}
+
+.sub {
+  @include subtleText();
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.btn {
+  @include pillBtn(40px, 14px, 999px);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.card {
+  margin-top: 14px;
+  @include surfaceCard(24px, 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.h2 {
+  margin-top: 2px;
+  font-weight: 900;
+  font-size: 13px;
+  @include textColor(#111, #fff);
+}
+
+.grid {
+  display: grid;
+  gap: 10px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 800;
+  @include subtleText();
+}
+
+.input {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.18);
+  outline: none;
+
+  @include theme(white) {
+    background: rgba(255,255,255,0.55);
+    color: #111;
+  }
+
+  @include theme(black) {
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+  }
+
+  @include ring();
+}
+
+.textarea {
+  width: 100%;
+  min-height: 140px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.18);
+  outline: none;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.45;
+
+  @include theme(white) {
+    background: rgba(255,255,255,0.55);
+    color: #111;
+  }
+
+  @include theme(black) {
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+  }
+
+  @include ring();
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.smallBtn {
+  @include pillBtn(34px, 12px, 999px);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.badge {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 17px;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 900;
+  font-size: 12px;
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(10px);
+
+  @include theme(white) {
+    background: rgba(255,255,255,0.55);
+    color: #111;
+  }
+
+  @include theme(black) {
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+  }
+}
+
+.error {
+  @include subtleText();
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+}
+
+.testRow {
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+
+  @include theme(white) { background: rgba(255,255,255,0.45); }
+  @include theme(black) { background: rgba(255,255,255,0.06); }
+}
+
+.left {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.title {
+  @include textColor(#111, #fff);
+  font-weight: 800;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  @include subtleText();
+  font-size: 12px;
+  line-height: 1.35;
+  word-break: break-word;
+}

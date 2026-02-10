@@ -1,0 +1,85 @@
+@use "../../styles/themed-mixins.module.scss" as *;
+
+.page {
+  @include container(980px, 16px);
+  padding-top: 18px;
+  padding-bottom: 24px;
+}
+
+.top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.h1 {
+  @include title(22px, 800);
+  @include textColor(#111, #fff);
+}
+
+.sub {
+  @include subtleText();
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.card {
+  margin-top: 14px;
+  @include surfaceCard(24px, 16px);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.label {
+  @include subtleText();
+  font-size: 12px;
+}
+
+.value {
+  @include textColor(#111, #fff);
+  word-break: break-word;
+}
+
+.actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 20px;
+  font-weight: 700;
+
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.18);
+
+  @include theme(white) {
+    background: rgba(255,255,255,0.55);
+    color: #111;
+  }
+
+  @include theme(black) {
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+  }
+}
+
+.danger {
+  @include theme(white) {
+    background: rgba(255,80,80,0.14);
+    border-color: rgba(255,80,80,0.25);
+  }
+
+  @include theme(black) {
+    background: rgba(255,80,80,0.10);
+    border-color: rgba(255,80,80,0.22);
+  }
+}

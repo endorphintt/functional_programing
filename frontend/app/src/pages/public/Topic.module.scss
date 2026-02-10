@@ -1,0 +1,80 @@
+@use "../../styles/themed-mixins.module.scss" as *;
+
+.page {
+  @include pageScroll;
+  @include container(980px, 16px);
+  padding-top: 18px;
+  padding-bottom: 24px;
+}
+
+.top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.h1 {
+  @include title(22px, 800);
+  @include textColor(#111, #fff);
+}
+
+.sub {
+  @include subtleText();
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.grid {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+
+  @media (min-width: 720px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.card {
+  @include surfaceCard(24px, 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 92px;
+}
+
+.cardTitle {
+  @include textColor(#111, #fff);
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.cardMeta {
+  @include subtleText();
+  font-size: 12px;
+}
+
+.btn {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 18px;
+  font-weight: 800;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(10px);
+
+  @include theme(white) {
+    background: rgba(255,255,255,0.55);
+    color: #111;
+  }
+
+  @include theme(black) {
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+  }
+}

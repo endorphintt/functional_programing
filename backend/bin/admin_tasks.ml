@@ -2,10 +2,10 @@ open Lwt.Infix
 
 let create_request =
   let open Caqti_request.Infix in
-  (Caqti_type.(t3 string string string) ->! Caqti_type.int64)
+  (Caqti_type.(t6 int64 string string string string string) ->! Caqti_type.int64)
     {|
-      INSERT INTO tasks (title, statement, starter_code)
-      VALUES (?, ?, ?)
+      INSERT INTO tasks (topic_id, title, statement, starter_code, runner, runner_body)
+      VALUES (?, ?, ?, ?, ?::task_runner, ?)
       RETURNING id
     |}
 
@@ -33,6 +33,15 @@ let get_string_opt json key =
   | `Null -> None
   | v -> Some (to_string v)
 
+let get_int64_opt json key =
+  let open Yojson.Safe.Util in
+  match json |> member key with
+  | `Null -> None
+  | (`Int i) -> Some (Int64.of_int i)
+  | (`Intlit s) -> Int64.of_string_opt s
+  | (`String s) -> Int64.of_string_opt s
+  | _ -> None
+
 let create _me req =
   Dream.body req >>= fun body ->
   let parsed =
@@ -42,6 +51,7 @@ let create _me req =
   | Error _ ->
       Dream.respond ~status:`Bad_Request "bad json"
   | Ok json ->
+      let topic_id = get_int64_opt json "topic_id" in
       let title = get_string_opt json "title" in
       let statement = get_string_opt json "statement" in
       let starter_code =
@@ -49,10 +59,21 @@ let create _me req =
         | Some v -> Some v
         | None -> get_string_opt json "starterCode"
       in
-      (match title, statement, starter_code with
-       | Some t, Some s, Some sc ->
+      let runner =
+        match get_string_opt json "runner" with
+        | Some v -> Some v
+        | None -> Some "json"
+      in
+      let runner_body =
+        match get_string_opt json "runner_body" with
+        | Some v -> Some v
+        | None -> get_string_opt json "runnerBody"
+      in
+      let runner_body = match runner_body with Some v -> Some v | None -> Some "Solution.solve input" in
+      (match topic_id, title, statement, starter_code, runner, runner_body with
+       | Some tid, Some t, Some s, Some sc, Some r, Some rb ->
            Dream.sql req (fun (module Db : Caqti_lwt.CONNECTION) ->
-               Db.find create_request (t, s, sc) >>= Caqti_lwt.or_fail
+               Db.find create_request (tid, t, s, sc, r, rb) >>= Caqti_lwt.or_fail
              )
            >>= fun id ->
            Dream.json (Yojson.Safe.to_string (`Assoc [ ("id", `String (Int64.to_string id)) ]))

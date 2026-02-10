@@ -1,0 +1,129 @@
+@use "../../styles/themed-mixins.module.scss" as *;
+
+.page {
+  @include pageScroll;
+  @include container(980px, 16px);
+  padding-top: 18px;
+  padding-bottom: 24px;
+}
+
+.top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.h1 {
+  @include title(22px, 800);
+  @include textColor(#111, #fff);
+}
+
+.sub {
+  @include subtleText();
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.card {
+  margin-top: 14px;
+  @include surfaceCard(24px, 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+
+  @include theme(white) {
+    background: rgba(255,255,255,0.45);
+  }
+
+  @include theme(black) {
+    background: rgba(255,255,255,0.06);
+  }
+}
+
+.left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.title {
+  @include textColor(#111, #fff);
+  font-weight: 800;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  @include subtleText();
+  font-size: 12px;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.badge {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 13px;
+  font-weight: 800;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(10px);
+
+  @include theme(white) {
+    background: rgba(255,255,255,0.55);
+    color: #111;
+  }
+
+  @include theme(black) {
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+  }
+}
+
+.btn {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 17px;
+  font-weight: 800;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(10px);
+
+  @include theme(white) {
+    background: rgba(255,255,255,0.55);
+    color: #111;
+  }
+
+  @include theme(black) {
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+  }
+}

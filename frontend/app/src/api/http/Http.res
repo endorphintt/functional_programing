@@ -1,0 +1,5 @@
+@module("./http.js") external getJson: (string, JSON.t) => Promise.t<JSON.t> = "getJson"
+@module("./http.js") external postJson: (string, JSON.t, JSON.t) => Promise.t<JSON.t> = "postJson"
+@module("./http.js") external putJson: (string, JSON.t, JSON.t) => Promise.t<JSON.t> = "putJson"
+@module("./http.js") external patchJson: (string, JSON.t, JSON.t) => Promise.t<JSON.t> = "patchJson"
+@module("./http.js") external deleteJson: (string, JSON.t) => Promise.t<JSON.t> = "deleteJson"

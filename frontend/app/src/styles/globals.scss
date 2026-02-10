@@ -1,0 +1,162 @@
+* {
+	padding: 0;
+	margin: 0;
+	border: 0;
+}
+
+*,
+*:before,
+*:after {
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+:focus,
+:active {
+	outline: none;
+}
+
+a:focus,
+a:active {
+	outline: none;
+}
+
+nav,
+footer,
+header,
+aside {
+	display: block;
+}
+
+html,
+body {
+	height: 100%;
+	width: 100%;
+	font-size: 100%;
+	line-height: 1;
+	font-size: 14px;
+	-ms-text-size-adjust: 100%;
+	-moz-text-size-adjust: 100%;
+	-webkit-text-size-adjust: 100%;
+}
+
+input,
+button,
+textarea {
+	font-family: inherit;
+}
+
+input::-ms-clear {
+	display: none;
+}
+
+button {
+	cursor: pointer;
+	background-color: transparent;
+}
+
+button::-moz-focus-inner {
+	padding: 0;
+	border: 0;
+}
+
+a,
+a:visited {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: none;
+}
+
+ul li {
+	list-style: none;
+}
+
+img {
+	vertical-align: top;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	font-size: inherit;
+	font-weight: 400;
+}
+
+html[data-theme="white"] body {
+  background: linear-gradient(to bottom, #dbdbdb, #b1c1de);
+}
+
+html[data-theme="white"] a,
+html[data-theme="white"] button {
+  color: #111;
+}
+
+html[data-theme="black"] body {
+  color: #fff;
+  background: radial-gradient(
+      800px 300px at 20% 10%,
+      rgba(120, 170, 255, 0.18),
+      transparent 60%
+    ),
+    radial-gradient(
+      600px 260px at 85% 30%,
+      rgba(120, 255, 170, 0.1),
+      transparent 55%
+    ),
+    radial-gradient(
+      700px 260px at 55% 90%,
+      rgba(255, 255, 255, 0.06),
+      transparent 60%
+    ),
+    linear-gradient(180deg, #0b0f16 0%, #070a0f 100%);
+}
+
+html[data-theme="black"] a,
+html[data-theme="black"] button {
+  color: #fff;
+}
+
+.appShell {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.appContent {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.appShell {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.appContent {
+  flex: 1;
+  overflow: auto;
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.appContent::-webkit-scrollbar {
+  display: none;
+}

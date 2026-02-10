@@ -1,0 +1,35 @@
+{
+  "name": "app",
+  "version": "0.0.0",
+  "author": "Patrick Ecker <ryyppy@users.noreply.github.com>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@rescript/react": "^0.13.1",
+    "@tanstack/react-query": "^5.90.20",
+    "next": "^15.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "rescript": "^12.1.0",
+    "rescript-webapi": "^0.10.0",
+    "zustand": "^5.0.11"
+  },
+  "repository": "https://github.com/rescript-lang/create-rescript-app",
+  "scripts": {
+    "dev": "next",
+    "debug": "NODE_OPTIONS='--inspect' next",
+    "build": "rescript && next build",
+    "start": "npx serve out",
+    "res:build": "rescript",
+    "res:clean": "rescript clean",
+    "res:dev": "rescript watch"
+  },
+  "devDependencies": {
+    "@tanstack/react-query-devtools": "^5.91.3",
+    "autoprefixer": "10.1.0",
+    "cssnano": "^6.0.1",
+    "gentype": "4.1",
+    "postcss": "^8.4.32",
+    "sass": "^1.97.3",
+    "tailwindcss": "^3.3.6"
+  }
+}

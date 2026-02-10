@@ -1,0 +1,49 @@
+@use "../../styles/themed-mixins.module.scss" as *;
+
+.page {
+  @include pageScroll;
+  @include container(980px, 16px);
+  padding-top: 18px;
+  padding-bottom: 24px;
+}
+
+.h1 {
+  @include title(20px, 900);
+  @include textColor(#111, #fff);
+}
+
+.sub {
+  @include subtleText();
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.card {
+  margin-top: 14px;
+  @include surfaceCard(24px, 16px);
+}
+
+.pre {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  overflow: auto;
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  @include theme(white) {
+    background: rgba(255,255,255,0.55);
+    color: #111;
+  }
+
+  @include theme(black) {
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+  }
+}

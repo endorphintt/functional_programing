@@ -1,0 +1,57 @@
+@use "../../styles/themed-mixins.module.scss" as *;
+
+.page {
+  @include pageScroll;
+  @include container(980px, 16px);
+  padding-top: 18px;
+  padding-bottom: 24px;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.h1 {
+  @include title(22px, 800);
+  @include textColor(#111, #fff);
+}
+
+.sub {
+  @include subtleText();
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  @include surfaceCard(24px, 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cardTitle {
+  @include textColor(#111, #fff);
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.cardSubtitle {
+  @include subtleText();
+  font-size: 13px;
+  min-height: 18px;
+}
+
+.cardMeta {
+  @include subtleText();
+  font-size: 12px;
+}

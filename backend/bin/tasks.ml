@@ -4,28 +4,31 @@ type submit_in = { code : string } [@@deriving yojson]
 
 let list_request =
   let open Caqti_request.Infix in
-  (Caqti_type.unit ->* Caqti_type.(t3 int64 string string))
+  (Caqti_type.unit ->* Caqti_type.(t4 int64 int64 string string))
     {|
-      SELECT id, title, created_at::text
-      FROM tasks
-      WHERE archived_at IS NULL
-      ORDER BY id DESC
+      SELECT t.id, t.topic_id, t.title, t.created_at::text
+      FROM tasks t
+      JOIN topics tp ON tp.id = t.topic_id
+      WHERE t.archived_at IS NULL AND tp.archived_at IS NULL
+      ORDER BY t.id DESC
+    |}
+
+let list_by_topic_request =
+  let open Caqti_request.Infix in
+  (Caqti_type.int64 ->* Caqti_type.(t4 int64 int64 string string))
+    {|
+      SELECT t.id, t.topic_id, t.title, t.created_at::text
+      FROM tasks t
+      JOIN topics tp ON tp.id = t.topic_id
+      WHERE t.archived_at IS NULL AND t.topic_id = ? AND tp.archived_at IS NULL
+      ORDER BY t.id DESC
     |}
 
 let get_request =
   let open Caqti_request.Infix in
-  (Caqti_type.int64 ->? Caqti_type.(t4 int64 string string string))
+  (Caqti_type.int64 ->? Caqti_type.(t7 int64 int64 string string string string string))
     {|
-      SELECT id, title, statement, starter_code
-      FROM tasks
-      WHERE id = ? AND archived_at IS NULL
-    |}
-
-let runner_request =
-  let open Caqti_request.Infix in
-  (Caqti_type.int64 ->? Caqti_type.string)
-    {|
-      SELECT runner::text
+      SELECT id, topic_id, title, statement, starter_code, runner::text, runner_body
       FROM tasks
       WHERE id = ? AND archived_at IS NULL
     |}
@@ -108,14 +111,36 @@ let list req =
   >>= fun rows ->
   let items =
     rows
-    |> List.map (fun (id, title, created_at) ->
+    |> List.map (fun (id, topic_id, title, created_at) ->
          `Assoc [
            ("id", `String (Int64.to_string id));
+           ("topic_id", `String (Int64.to_string topic_id));
            ("title", `String title);
            ("created_at", `String created_at);
          ])
   in
   Dream.json (Yojson.Safe.to_string (`List items))
+
+let list_by_topic req =
+  let topic_id_str = Dream.param req "id" in
+  match Int64.of_string_opt topic_id_str with
+  | None -> Dream.respond ~status:`Bad_Request "bad topic id"
+  | Some topic_id ->
+      Dream.sql req (fun (module Db : Caqti_lwt.CONNECTION) ->
+          Db.collect_list list_by_topic_request topic_id >>= Caqti_lwt.or_fail
+        )
+      >>= fun rows ->
+      let items =
+        rows
+        |> List.map (fun (id, topic_id, title, created_at) ->
+             `Assoc [
+               ("id", `String (Int64.to_string id));
+               ("topic_id", `String (Int64.to_string topic_id));
+               ("title", `String title);
+               ("created_at", `String created_at);
+             ])
+      in
+      Dream.json (Yojson.Safe.to_string (`List items))
 
 let show req =
   let id_str = Dream.param req "id" in
@@ -127,12 +152,15 @@ let show req =
         )
       >>= function
       | None -> Dream.respond ~status:`Not_Found "not found"
-      | Some (id, title, statement, starter_code) ->
+      | Some (id, topic_id, title, statement, starter_code, runner, runner_body) ->
           `Assoc [
             ("id", `String (Int64.to_string id));
+            ("topic_id", `String (Int64.to_string topic_id));
             ("title", `String title);
             ("statement", `String statement);
             ("starter_code", `String starter_code);
+            ("runner", `String runner);
+            ("runner_body", `String runner_body);
           ]
           |> Yojson.Safe.to_string
           |> Dream.json
@@ -160,13 +188,14 @@ let my_best (me : Auth.me) req =
 
 let my_tasks_request =
   let open Caqti_request.Infix in
-  (Caqti_type.int64 ->* Caqti_type.(t4 int64 string string int))
+  (Caqti_type.int64 ->* Caqti_type.(t5 int64 int64 string string int))
     {|
-      SELECT t.id, t.title, t.created_at::text, COALESCE(utb.best_score, 0) AS best_score
+      SELECT t.id, t.topic_id, t.title, t.created_at::text, COALESCE(utb.best_score, 0) AS best_score
       FROM tasks t
+      JOIN topics tp ON tp.id = t.topic_id
       LEFT JOIN user_task_best utb
         ON utb.task_id = t.id AND utb.user_id = ?
-      WHERE t.archived_at IS NULL
+      WHERE t.archived_at IS NULL AND tp.archived_at IS NULL
       ORDER BY t.id DESC
     |}
 
@@ -177,9 +206,10 @@ let my_tasks (me : Auth.me) req =
   >>= fun rows ->
   let items =
     rows
-    |> List.map (fun (id, title, created_at, best_score) ->
+    |> List.map (fun (id, topic_id, title, created_at, best_score) ->
          `Assoc [
            ("id", `String (Int64.to_string id));
+           ("topic_id", `String (Int64.to_string topic_id));
            ("title", `String title);
            ("created_at", `String created_at);
            ("best_score", `Int best_score);
@@ -228,47 +258,6 @@ let my_submissions (me : Auth.me) req =
         ("items", `List items);
       ]))
 
-let parse_int_json s =
-  try
-    match Yojson.Safe.from_string s with
-    | `Int v -> Ok v
-    | _ -> Error "bad"
-  with _ -> Error "bad"
-
-let parse_int2_json s =
-  try
-    match Yojson.Safe.from_string s with
-    | `List [ `Int a; `Int b ] -> Ok (a, b)
-    | _ -> Error "bad"
-  with _ -> Error "bad"
-
-let error_msg_of_runner (e : Runner.run_error) =
-  match e with
-  | Runner.Timeout -> "timeout"
-  | Runner.Runtime_error s -> "runtime_error: " ^ s
-  | Runner.Bad_output s -> "bad_output: " ^ s
-  | Runner.Compile_error s -> "compile_error: " ^ s
-
-let finalize (module Db : Caqti_lwt.CONNECTION) ~me ~task_id ~code ~status ~score ~passed ~total ~result_json =
-  Db.find insert_submission_request (me.Auth.id, task_id, code, status, score, passed, total, result_json)
-  >>= Caqti_lwt.or_fail >>= fun submission_id ->
-  Db.find_opt best_select_request (me.id, task_id) >>= Caqti_lwt.or_fail >>= fun best_opt ->
-  (match best_opt with
-   | None ->
-       Db.exec best_insert_request (me.id, task_id, score, submission_id)
-       >>= fun r -> (match r with Ok () -> Lwt.return (Ok score) | Error e -> Lwt.return (Error e))
-   | Some (best_score, _) ->
-       if score > best_score then
-         Db.exec best_update_request (score, submission_id, me.id, task_id)
-         >>= fun r -> (match r with Ok () -> Lwt.return (Ok (score - best_score)) | Error e -> Lwt.return (Error e))
-       else
-         Lwt.return (Ok 0))
-  >>= Caqti_lwt.or_fail >>= fun delta ->
-  (if delta > 0 then Db.exec user_add_rating_request (delta, me.id) >>= Caqti_lwt.or_fail else Lwt.return ())
-  >>= fun () ->
-  Db.find user_get_rating_request me.id >>= Caqti_lwt.or_fail >>= fun rating ->
-  Lwt.return (submission_id, delta, rating)
-
 let submit (me : Auth.me) req =
   let task_id_str = Dream.param req "id" in
   match Int64.of_string_opt task_id_str with
@@ -279,168 +268,177 @@ let submit (me : Auth.me) req =
       | Error _ -> Dream.respond ~status:`Bad_Request "bad json"
       | Ok input ->
           Dream.sql req (fun (module Db : Caqti_lwt.CONNECTION) ->
-              Db.find_opt runner_request task_id >>= Caqti_lwt.or_fail >>= function
+              Db.collect_list tests_request task_id >>= Caqti_lwt.or_fail >>= fun tests ->
+              let total = List.length tests in
+              let temp_dir =
+                let base = Filename.get_temp_dir_name () in
+                Filename.concat base (Printf.sprintf "pf_%Ld_%Ld_%d" me.id task_id (Unix.getpid ()))
+              in
+              Db.find_opt get_request task_id >>= Caqti_lwt.or_fail >>= function
               | None ->
-                  let result_json = Yojson.Safe.to_string (`Assoc [("error", `String "not found")]) in
-                  finalize (module Db) ~me ~task_id ~code:input.code ~status:"error" ~score:0 ~passed:0 ~total:0 ~result_json
-                  >|= fun (sid, delta, rating) -> (sid, "error", 0, delta, rating)
-              | Some runner ->
-                  Db.collect_list tests_request task_id >>= Caqti_lwt.or_fail >>= fun tests ->
-                  let total = List.length tests in
-                  let base = Filename.get_temp_dir_name () in
-                  let temp_dir = Filename.concat base (Printf.sprintf "pf_%Ld_%Ld_%d" me.id task_id (Unix.getpid ())) in
-
-                  (match runner with
-                   | "int1" ->
-                       Runner.compile_int1_solver ~dir:temp_dir ~code:input.code >>= (function
-                         | Error e ->
-                             let result_json = Yojson.Safe.to_string (`Assoc [("error", `String (error_msg_of_runner e))]) in
-                             finalize (module Db) ~me ~task_id ~code:input.code ~status:"error" ~score:0 ~passed:0 ~total ~result_json
-                             >|= fun (sid, delta, rating) -> (sid, "error", 0, delta, rating)
-                         | Ok exe ->
-                             let rec loop acc passed = function
-                               | [] -> Lwt.return (List.rev acc, passed)
-                               | (name, input_s, expected_s) :: rest ->
-                                   (match parse_int_json input_s, parse_int_json expected_s with
-                                    | Ok x, Ok exp ->
-                                        Runner.run_exe_int1 ~exe ~x >>= (function
-                                          | Ok got ->
-                                              let ok = got = exp in
-                                              let item =
-                                                `Assoc [
-                                                  ("name", `String name);
-                                                  ("input", `Int x);
-                                                  ("expected", `Int exp);
-                                                  ("got", `Int got);
-                                                  ("ok", `Bool ok);
-                                                ]
-                                              in
-                                              loop (item :: acc) (passed + (if ok then 1 else 0)) rest
-                                          | Error err ->
-                                              let item =
-                                                `Assoc [
-                                                  ("name", `String name);
-                                                  ("ok", `Bool false);
-                                                  ("error", `String (error_msg_of_runner err));
-                                                ]
-                                              in
-                                              loop (item :: acc) passed rest)
-                                    | _ ->
-                                        let item = `Assoc [("name", `String name); ("ok", `Bool false); ("error", `String "bad test json")] in
-                                        loop (item :: acc) passed rest)
-                             in
-                             loop [] 0 tests >>= fun (items, passed) ->
-                             let score = passed in
-                             let result_json =
-                               `Assoc [("tests", `List items); ("passed", `Int passed); ("total", `Int total)]
-                               |> Yojson.Safe.to_string
-                             in
-                             finalize (module Db) ~me ~task_id ~code:input.code ~status:"done" ~score ~passed ~total ~result_json
-                             >|= fun (sid, delta, rating) -> (sid, "done", score, delta, rating))
-
-                   | "int2" ->
-                       Runner.compile_int2_solver ~dir:temp_dir ~code:input.code >>= (function
-                         | Error e ->
-                             let result_json = Yojson.Safe.to_string (`Assoc [("error", `String (error_msg_of_runner e))]) in
-                             finalize (module Db) ~me ~task_id ~code:input.code ~status:"error" ~score:0 ~passed:0 ~total ~result_json
-                             >|= fun (sid, delta, rating) -> (sid, "error", 0, delta, rating)
-                         | Ok exe ->
-                             let rec loop acc passed = function
-                               | [] -> Lwt.return (List.rev acc, passed)
-                               | (name, input_s, expected_s) :: rest ->
-                                   (match parse_int2_json input_s, parse_int_json expected_s with
-                                    | Ok (a, b), Ok exp ->
-                                        Runner.run_exe_int2 ~exe ~a ~b >>= (function
-                                          | Ok got ->
-                                              let ok = got = exp in
-                                              let item =
-                                                `Assoc [
-                                                  ("name", `String name);
-                                                  ("input", `List [ `Int a; `Int b ]);
-                                                  ("expected", `Int exp);
-                                                  ("got", `Int got);
-                                                  ("ok", `Bool ok);
-                                                ]
-                                              in
-                                              loop (item :: acc) (passed + (if ok then 1 else 0)) rest
-                                          | Error err ->
-                                              let item =
-                                                `Assoc [
-                                                  ("name", `String name);
-                                                  ("ok", `Bool false);
-                                                  ("error", `String (error_msg_of_runner err));
-                                                ]
-                                              in
-                                              loop (item :: acc) passed rest)
-                                    | _ ->
-                                        let item = `Assoc [("name", `String name); ("ok", `Bool false); ("error", `String "bad test json")] in
-                                        loop (item :: acc) passed rest)
-                             in
-                             loop [] 0 tests >>= fun (items, passed) ->
-                             let score = passed in
-                             let result_json =
-                               `Assoc [("tests", `List items); ("passed", `Int passed); ("total", `Int total)]
-                               |> Yojson.Safe.to_string
-                             in
-                             finalize (module Db) ~me ~task_id ~code:input.code ~status:"done" ~score ~passed ~total ~result_json
-                             >|= fun (sid, delta, rating) -> (sid, "done", score, delta, rating))
-
-                   | "json" ->
-                       Runner.compile_json_solver_body ~dir:temp_dir ~body:input.code >>= (function
-                         | Error e ->
-                             let result_json = Yojson.Safe.to_string (`Assoc [("error", `String (error_msg_of_runner e))]) in
-                             finalize (module Db) ~me ~task_id ~code:input.code ~status:"error" ~score:0 ~passed:0 ~total ~result_json
-                             >|= fun (sid, delta, rating) -> (sid, "error", 0, delta, rating)
-                         | Ok exe ->
-                             let rec loop acc passed = function
-                               | [] -> Lwt.return (List.rev acc, passed)
-                               | (name, input_s, expected_s) :: rest ->
-                                   let expected =
-                                     try Ok (Yojson.Safe.from_string expected_s) with _ -> Error ()
-                                   in
-                                   (match expected with
-                                    | Error () ->
-                                        let item = `Assoc [("name", `String name); ("ok", `Bool false); ("error", `String "bad expected json")] in
-                                        loop (item :: acc) passed rest
-                                    | Ok exp ->
-                                        Runner.run_exe_json ~exe ~input_json_string:input_s >>= (function
-                                          | Error err ->
-                                              let item =
-                                                `Assoc [
-                                                  ("name", `String name);
-                                                  ("ok", `Bool false);
-                                                  ("error", `String (error_msg_of_runner err));
-                                                ]
-                                              in
-                                              loop (item :: acc) passed rest
-                                          | Ok got ->
-                                              let ok = got = exp in
-                                              let item =
-                                                `Assoc [
-                                                  ("name", `String name);
-                                                  ("input", (try Yojson.Safe.from_string input_s with _ -> `String input_s));
-                                                  ("expected", exp);
-                                                  ("got", got);
-                                                  ("ok", `Bool ok);
-                                                ]
-                                              in
-                                              loop (item :: acc) (passed + (if ok then 1 else 0)) rest))
-                             in
-                             loop [] 0 tests >>= fun (items, passed) ->
-                             let score = passed in
-                             let result_json =
-                               `Assoc [("tests", `List items); ("passed", `Int passed); ("total", `Int total)]
-                               |> Yojson.Safe.to_string
-                             in
-                             finalize (module Db) ~me ~task_id ~code:input.code ~status:"done" ~score ~passed ~total ~result_json
-                             >|= fun (sid, delta, rating) -> (sid, "done", score, delta, rating))
-
-                   | _ ->
-                       let result_json = Yojson.Safe.to_string (`Assoc [("error", `String "unknown runner")]) in
-                       finalize (module Db) ~me ~task_id ~code:input.code ~status:"error" ~score:0 ~passed:0 ~total ~result_json
-                       >|= fun (sid, delta, rating) -> (sid, "error", 0, delta, rating))
+                  Db.find user_get_rating_request me.id >>= Caqti_lwt.or_fail >>= fun rating ->
+                  Lwt.return (-1L, 0, 0, rating, "error")
+              | Some (_id, _topic_id, _title, _statement, _starter, runner, runner_body) ->
+                  let code =
+                    if runner = "json" then
+                      "module Solution = struct\n" ^ input.code ^ "\nend\n"
+                      ^ "open Yojson.Safe\n"
+                      ^ "let solve input = (" ^ runner_body ^ ")\n"
+                    else
+                      input.code
+                  in
+                  Runner.compile_json_solver ~dir:temp_dir ~code >>= function
+                  | Error (Runner.Compile_error err) ->
+                      let result_json =
+                        `Assoc [ ("compile_error", `String err) ]
+                        |> Yojson.Safe.to_string
+                      in
+                      Db.find insert_submission_request (me.id, task_id, input.code, "error", 0, 0, total, result_json)
+                      >>= Caqti_lwt.or_fail
+                      >>= fun submission_id ->
+                      Db.find user_get_rating_request me.id >>= Caqti_lwt.or_fail >>= fun rating ->
+                      Lwt.return (submission_id, 0, 0, rating, "error")
+                  | Error Runner.Timeout ->
+                      let result_json =
+                        `Assoc [ ("error", `String "timeout") ]
+                        |> Yojson.Safe.to_string
+                      in
+                      Db.find insert_submission_request (me.id, task_id, input.code, "error", 0, 0, total, result_json)
+                      >>= Caqti_lwt.or_fail
+                      >>= fun submission_id ->
+                      Db.find user_get_rating_request me.id >>= Caqti_lwt.or_fail >>= fun rating ->
+                      Lwt.return (submission_id, 0, 0, rating, "error")
+                  | Error (Runner.Runtime_error err) ->
+                      let result_json =
+                        `Assoc [ ("runtime_error", `String err) ]
+                        |> Yojson.Safe.to_string
+                      in
+                      Db.find insert_submission_request (me.id, task_id, input.code, "error", 0, 0, total, result_json)
+                      >>= Caqti_lwt.or_fail
+                      >>= fun submission_id ->
+                      Db.find user_get_rating_request me.id >>= Caqti_lwt.or_fail >>= fun rating ->
+                      Lwt.return (submission_id, 0, 0, rating, "error")
+                  | Error (Runner.Bad_output out) ->
+                      let result_json =
+                        `Assoc [ ("bad_output", `String out) ]
+                        |> Yojson.Safe.to_string
+                      in
+                      Db.find insert_submission_request (me.id, task_id, input.code, "error", 0, 0, total, result_json)
+                      >>= Caqti_lwt.or_fail
+                      >>= fun submission_id ->
+                      Db.find user_get_rating_request me.id >>= Caqti_lwt.or_fail >>= fun rating ->
+                      Lwt.return (submission_id, 0, 0, rating, "error")
+                  | Ok exe ->
+                      let rec normalize = function
+                        | `Assoc kvs ->
+                            `Assoc (kvs |> List.map (fun (k, v) -> (k, normalize v)) |> List.sort (fun (a, _) (b, _) -> compare a b))
+                        | `List xs -> `List (List.map normalize xs)
+                        | x -> x
+                      in
+                      let parse_json s =
+                        try Ok (Yojson.Safe.from_string s) with _ -> Error "bad json"
+                      in
+                      let rec run_tests acc passed = function
+                        | [] -> Lwt.return (List.rev acc, passed)
+                        | (name, input_s, expected_s) :: rest ->
+                            (match parse_json input_s, parse_json expected_s with
+                             | Ok inp, Ok exp ->
+                                 Runner.run_exe_json ~exe ~input_json_string:input_s >>= (function
+                                   | Ok got ->
+                                       let ok = normalize got = normalize exp in
+                                       let item =
+                                         `Assoc [
+                                           ("name", `String name);
+                                           ("input", inp);
+                                           ("expected", exp);
+                                           ("got", got);
+                                           ("ok", `Bool ok);
+                                         ]
+                                       in
+                                       run_tests (item :: acc) (passed + (if ok then 1 else 0)) rest
+                                   | Error Runner.Timeout ->
+                                       let item =
+                                         `Assoc [
+                                           ("name", `String name);
+                                           ("input_raw", `String input_s);
+                                           ("ok", `Bool false);
+                                           ("error", `String "timeout");
+                                         ]
+                                       in
+                                       run_tests (item :: acc) passed rest
+                                   | Error (Runner.Runtime_error e) ->
+                                       let item =
+                                         `Assoc [
+                                           ("name", `String name);
+                                           ("input_raw", `String input_s);
+                                           ("ok", `Bool false);
+                                           ("error", `String ("runtime: " ^ e));
+                                         ]
+                                       in
+                                       run_tests (item :: acc) passed rest
+                                   | Error (Runner.Bad_output o) ->
+                                       let item =
+                                         `Assoc [
+                                           ("name", `String name);
+                                           ("input_raw", `String input_s);
+                                           ("ok", `Bool false);
+                                           ("error", `String ("bad_output: " ^ o));
+                                         ]
+                                       in
+                                       run_tests (item :: acc) passed rest
+                                   | Error (Runner.Compile_error _) ->
+                                       let item =
+                                         `Assoc [
+                                           ("name", `String name);
+                                           ("ok", `Bool false);
+                                           ("error", `String "compile_error_unexpected");
+                                         ]
+                                       in
+                                       run_tests (item :: acc) passed rest)
+                             | _ ->
+                                 let item =
+                                   `Assoc [
+                                     ("name", `String name);
+                                     ("ok", `Bool false);
+                                     ("error", `String "bad test json");
+                                     ("input_raw", `String input_s);
+                                     ("expected_raw", `String expected_s);
+                                   ]
+                                 in
+                                 run_tests (item :: acc) passed rest)
+                      in
+                      run_tests [] 0 tests >>= fun (items, passed) ->
+                      let score = passed in
+                      let result_json =
+                        `Assoc [
+                          ("tests", `List items);
+                          ("passed", `Int passed);
+                          ("total", `Int total);
+                        ]
+                        |> Yojson.Safe.to_string
+                      in
+                      Db.find insert_submission_request (me.id, task_id, input.code, "done", score, passed, total, result_json)
+                      >>= Caqti_lwt.or_fail
+                      >>= fun submission_id ->
+                      Db.find_opt best_select_request (me.id, task_id) >>= Caqti_lwt.or_fail >>= fun best_opt ->
+                      (match best_opt with
+                       | None ->
+                           Db.exec best_insert_request (me.id, task_id, score, submission_id)
+                           >>= fun r -> (match r with Ok () -> Lwt.return (Ok score) | Error e -> Lwt.return (Error e))
+                       | Some (best_score, _best_sub) ->
+                           if score > best_score then
+                             Db.exec best_update_request (score, submission_id, me.id, task_id)
+                             >>= fun r -> (match r with Ok () -> Lwt.return (Ok (score - best_score)) | Error e -> Lwt.return (Error e))
+                           else
+                             Lwt.return (Ok 0))
+                      >>= Caqti_lwt.or_fail
+                      >>= fun delta ->
+                      (if delta > 0 then Db.exec user_add_rating_request (delta, me.id) >>= Caqti_lwt.or_fail else Lwt.return ())
+                      >>= fun () ->
+                      Db.find user_get_rating_request me.id >>= Caqti_lwt.or_fail >>= fun rating ->
+                      Lwt.return (submission_id, score, delta, rating, "done")
             )
-          >>= fun (submission_id, status, score, delta, rating) ->
+          >>= fun (submission_id, score, delta, rating, status) ->
           `Assoc [
             ("submission_id", `String (Int64.to_string submission_id));
             ("status", `String status);
