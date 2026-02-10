@@ -58,15 +58,52 @@
 .item {
   display: flex;
   gap: 8px;
+  align-items: center;
 }
 
 .dot {
   width: 6px;
   height: 6px;
   border-radius: 3px;
-  margin-top: 6px;
+  margin-top: 2px;
   flex: 0 0 6px;
 
   @include theme(white) { background: rgba(17,17,17,0.35); }
   @include theme(black) { background: rgba(255,255,255,0.35); }
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.input {
+  width: 120px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 14px;
+  @include glass(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.10), 0.18, 10px);
+}
+
+.smallBtn {
+  @include pillBtn(34px, 12px, 999px);
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.pill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 12px;
+  @include glass(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.10), 0.18, 10px);
+}
+
+.error {
+  font-size: 13px;
+  font-weight: 800;
+  @include theme(white) { color: #b11a1a; }
+  @include theme(black) { color: #ff8a8a; }
 }

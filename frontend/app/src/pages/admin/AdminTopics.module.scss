@@ -71,6 +71,20 @@
   @include glass(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.10), 0.18, 10px);
 }
 
+.textarea {
+  width: 100%;
+  min-height: 140px;
+  padding: 12px;
+  border-radius: 16px;
+  outline: none;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.45;
+  @include glass(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.10), 0.18, 10px);
+  @include ring();
+}
+
 .row {
   display: flex;
   flex-wrap: wrap;

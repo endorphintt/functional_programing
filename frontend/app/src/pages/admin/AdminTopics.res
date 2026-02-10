@@ -10,6 +10,7 @@ module S = {
   @module("./AdminTopics.module.scss") external field: string = "field"
   @module("./AdminTopics.module.scss") external label: string = "label"
   @module("./AdminTopics.module.scss") external input: string = "input"
+  @module("./AdminTopics.module.scss") external textarea: string = "textarea"
   @module("./AdminTopics.module.scss") external row: string = "row"
   @module("./AdminTopics.module.scss") external smallBtn: string = "smallBtn"
   @module("./AdminTopics.module.scss") external pill: string = "pill"
@@ -23,6 +24,9 @@ module S = {
   @module("./AdminTopics.module.scss") external badge: string = "badge"
 }
 
+@module("../../shared/auth/AdminGuard.js")
+external adminGuard: React.component<unit> = "default"
+
 let errMsg = (e: 'a): string =>
   switch JsExn.message(Obj.magic(e)) {
   | Some(m) => m
@@ -30,6 +34,13 @@ let errMsg = (e: 'a): string =>
   }
 
 let includesLower: (string, string) => bool = %raw("(s,q)=>String(s).toLowerCase().includes(String(q))")
+let cut: (string, int) => string = %raw("(s,n)=>{s=String(s||'');return s.length<=n?s:(s.slice(0,n)+'…')}")
+
+let parseInt = (s: string): option<int> =>
+  switch Int.fromString(s->String.trim) {
+  | Some(v) => Some(v)
+  | None => None
+  }
 
 @react.component
 let make = () => {
@@ -44,7 +55,17 @@ let make = () => {
   let (filter, setFilter) = React.useState(() => "")
   let (showArchived, setShowArchived) = React.useState(() => false)
 
-  let load = () => {
+  let (selectedId, setSelectedId) = React.useState((): option<string> => None)
+  let (page, setPage) = React.useState((): option<AdminTopicsTypes.topicPageAdmin> => None)
+  let (loadingPage, setLoadingPage) = React.useState(() => false)
+  let (pageErr, setPageErr) = React.useState(() => "")
+
+  let (pSortKey, setPSortKey) = React.useState(() => "0")
+  let (pBody, setPBody) = React.useState(() => "")
+  let (pCode, setPCode) = React.useState(() => "")
+  let (addingP, setAddingP) = React.useState(() => false)
+
+  let loadList = () => {
     setLoading(_ => true)
     setErr(_ => "")
     let _ =
@@ -61,10 +82,36 @@ let make = () => {
       })
   }
 
+  let loadPage = (~id: string) => {
+    setLoadingPage(_ => true)
+    setPageErr(_ => "")
+    setPage(_ => None)
+    let _ =
+      AdminTopicsApi.pageAdmin(~id)
+      ->Promise.then(p => {
+        setPage(_ => Some(p))
+        setLoadingPage(_ => false)
+        Promise.resolve()
+      })
+      ->Promise.catch(e => {
+        setPageErr(_ => errMsg(e))
+        setLoadingPage(_ => false)
+        Promise.resolve()
+      })
+  }
+
   React.useEffect0(() => {
-    load()
+    loadList()
     None
   })
+
+  React.useEffect1(() => {
+    switch selectedId {
+    | None => setPage(_ => None)
+    | Some(id) => loadPage(~id)
+    }
+    None
+  }, [selectedId])
 
   let onCreate = () => {
     if title->String.trim == "" {
@@ -74,11 +121,12 @@ let make = () => {
       setErr(_ => "")
       let _ =
         AdminTopicsApi.create({title, subtitle})
-        ->Promise.then(_ => {
+        ->Promise.then(r => {
           setTitle(_ => "")
           setSubtitle(_ => "")
           setCreating(_ => false)
-          load()
+          loadList()
+          setSelectedId(_ => Some(r.id))
           Promise.resolve()
         })
         ->Promise.catch(e => {
@@ -90,11 +138,58 @@ let make = () => {
   }
 
   let onArchive = (~id: string) => {
-    let _ = AdminTopicsApi.archive(~id)->Promise.then(_ => {load(); Promise.resolve()})
+    let _ = AdminTopicsApi.archive(~id)->Promise.then(_ => {loadList(); Promise.resolve()})
   }
 
   let onUnarchive = (~id: string) => {
-    let _ = AdminTopicsApi.unarchive(~id)->Promise.then(_ => {load(); Promise.resolve()})
+    let _ = AdminTopicsApi.unarchive(~id)->Promise.then(_ => {loadList(); Promise.resolve()})
+  }
+
+  let onAddParagraph = () => {
+    switch selectedId {
+    | None => setPageErr(_ => "Select a topic")
+    | Some(tid) =>
+      switch parseInt(pSortKey) {
+      | None => setPageErr(_ => "Bad sort_key")
+      | Some(sort_key) =>
+        if pBody->String.trim == "" {
+          setPageErr(_ => "Body is required")
+        } else {
+          setAddingP(_ => true)
+          setPageErr(_ => "")
+          let code = pCode->String.trim == "" ? None : Some(pCode)
+          let p: AdminTopicsTypes.paragraphIn = {sort_key, body: pBody, code}
+          let _ =
+            AdminTopicsApi.addParagraphs(~id=tid, ~items=[p])
+            ->Promise.then(_ => {
+              setPSortKey(_ => "0")
+              setPBody(_ => "")
+              setPCode(_ => "")
+              setAddingP(_ => false)
+              loadPage(~id=tid)
+              Promise.resolve()
+            })
+            ->Promise.catch(e => {
+              setPageErr(_ => errMsg(e))
+              setAddingP(_ => false)
+              Promise.resolve()
+            })
+        }
+      }
+    }
+  }
+
+  let onDeleteParagraph = (~pid: string) => {
+    switch selectedId {
+    | None => ()
+    | Some(tid) =>
+      let _ =
+        AdminTopicsApi.deleteParagraph(~id=pid)
+        ->Promise.then(_ => {
+          loadPage(~id=tid)
+          Promise.resolve()
+        })
+    }
   }
 
   let q = filter->String.trim->String.toLowerCase
@@ -120,6 +215,9 @@ let make = () => {
     })
 
   <div className={S.page}>
+    {React.createElement(adminGuard, ())}
+    {React.createElement(adminGuard, ())}
+
     <div className={S.top}>
       <div>
         <div className={S.h1}>{"Topics (admin)"->React.string}</div>
@@ -156,7 +254,7 @@ let make = () => {
           <button className={S.smallBtn} disabled={creating} onClick={_ => onCreate()}>
             {(creating ? "Creating..." : "Create")->React.string}
           </button>
-          <button className={S.smallBtn} onClick={_ => load()} disabled={loading}>
+          <button className={S.smallBtn} onClick={_ => loadList()} disabled={loading}>
             {(loading ? "Reloading..." : "Reload")->React.string}
           </button>
         </div>
@@ -186,10 +284,12 @@ let make = () => {
         {visible
          ->Belt.Array.map(it => {
            let archived = switch it.archived_at { | None => false | Some(_) => true }
-           <div className={S.item} key={it.id}>
+           let selected = switch selectedId { | Some(id) => id == it.id | None => false }
+
+           <div className={S.item} key={it.id} onClick={_ => setSelectedId(_ => Some(it.id))}>
              <div className={S.left}>
                <div className={S.title}>
-                 {(it.title ++ (archived ? " (archived)" : ""))->React.string}
+                 {(it.title ++ (selected ? " • selected" : "") ++ (archived ? " (archived)" : ""))->React.string}
                </div>
                <div className={S.meta}>
                  {(it.subtitle == "" ? "—" : it.subtitle)->React.string}
@@ -203,7 +303,11 @@ let make = () => {
                 }}
              </div>
 
-             <div className={S.actions}>
+             <div className={S.actions} onClick={e => ReactEvent.Mouse.stopPropagation(e)}>
+               <button className={S.smallBtn} onClick={_ => setSelectedId(_ => Some(it.id))}>
+                 {"Open"->React.string}
+               </button>
+
                {if archived {
                   <button className={S.smallBtn} onClick={_ => onUnarchive(~id=it.id)}>
                     {"Unarchive"->React.string}
@@ -219,5 +323,101 @@ let make = () => {
          ->React.array}
       </div>
     </div>
-  </div>
-}
+
+    <div className={S.card}>
+      <div className={S.h2}>{"Topic details"->React.string}</div>
+
+      <div className={S.sub}>
+        {switch (selectedId, loadingPage, pageErr) {
+         | (None, _, _) => "Select a topic to manage paragraphs."->React.string
+         | (Some(id), true, _) => ("Loading " ++ id ++ "...")->React.string
+         | (Some(_), false, "") =>
+           switch page {
+           | None => "No data"->React.string
+           | Some(p) =>
+             ("Paragraphs: " ++ p.paragraphs->Belt.Array.length->Int.toString ++ " • Tasks: " ++ p.tasks->Belt.Array.length->Int.toString)->React.string
+           }
+         | (Some(_), false, msg) => ("Error: " ++ msg)->React.string
+         }}
+      </div>
+
+      {switch pageErr {
+       | "" => React.null
+       | msg => <div className={S.error}>{("Error: " ++ msg)->React.string}</div>
+       }}
+
+      {switch page {
+       | None => React.null
+       | Some(p) =>
+         <div className={S.grid}>
+           <div className={S.field}>
+             <div className={S.label}>{"sort_key"->React.string}</div>
+             <input className={S.input} value={pSortKey} onChange={e => setPSortKey(_ => ReactEvent.Form.target(e)["value"])} />
+           </div>
+
+           <div className={S.field}>
+             <div className={S.label}>{"body"->React.string}</div>
+             <textarea className={S.textarea} value={pBody} onChange={e => setPBody(_ => ReactEvent.Form.target(e)["value"])} />
+           </div>
+
+           <div className={S.field}>
+             <div className={S.label}>{"code (optional)"->React.string}</div>
+             <textarea className={S.textarea} value={pCode} onChange={e => setPCode(_ => ReactEvent.Form.target(e)["value"])} />
+           </div>
+
+           <div className={S.row}>
+             <button className={S.smallBtn} disabled={addingP || loadingPage} onClick={_ => onAddParagraph()}>
+               {(addingP ? "Adding..." : "Add paragraph")->React.string}
+             </button>
+             <button className={S.smallBtn} disabled={loadingPage} onClick={_ => loadPage(~id=p.topic.id)}>
+               {"Reload details"->React.string}
+             </button>
+           </div>
+
+           <div className={S.h2}>{"Paragraphs"->React.string}</div>
+
+           <div className={S.list}>
+             {p.paragraphs
+              ->Belt.Array.map(pp =>
+                <div className={S.item} key={pp.id}>
+                  <div className={S.left}>
+                    <div className={S.title}>{(pp.sort_key->Int.toString ++ " • " ++ pp.id)->React.string}</div>
+                    <div className={S.meta}>{cut(pp.body, 220)->React.string}</div>
+                    {switch pp.code {
+                     | None => <div className={S.meta}>{"code: —"->React.string}</div>
+                     | Some(c) => <div className={S.meta}>{("code: " ++ cut(c, 140))->React.string}</div>
+                     }}
+                  </div>
+
+                  <div className={S.actions}>
+                    <button className={S.smallBtn} onClick={_ => onDeleteParagraph(~pid=pp.id)}>
+                      {"Delete"->React.string}
+                    </button>
+                  </div>
+                </div>
+              )
+              ->React.array}
+           </div>
+
+           <div className={S.h2}>{"Tasks"->React.string}</div>
+
+           <div className={S.list}>
+             {p.tasks
+              ->Belt.Array.map(t =>
+                <div className={S.item} key={t.id}>
+                  <div className={S.left}>
+                    <div className={S.title}>{t.title->React.string}</div>
+                    <div className={S.meta}>{("id " ++ t.id ++ " • " ++ t.created_at)->React.string}</div>
+                  </div>
+                  <div className={S.actions}>
+                    <NextLink href={"/task/" ++ t.id} className={S.smallBtn}>{"Open"->React.string}</NextLink>
+                  </div>
+                </div>
+              )
+              ->React.array}
+           </div>
+           </div>
+        }}
+      </div>
+    </div>
+  }

@@ -10,6 +10,7 @@ import * as AdminTestsApi from "../../api/admin/AdminTestsApi.res.mjs";
 import * as Stdlib_Promise from "@rescript/runtime/lib/es6/Stdlib_Promise.js";
 import * as JsxRuntime from "react/jsx-runtime";
 import * as AdminTasksModuleScss from "./AdminTasks.module.scss";
+import AdminGuardJs from "../../shared/auth/AdminGuard.js";
 
 let page = AdminTasksModuleScss.page;
 
@@ -77,6 +78,8 @@ let S = {
   meta: meta
 };
 
+let adminGuard = AdminGuardJs;
+
 function errMsg(e) {
   let m = Stdlib_JsExn.message(e);
   if (m !== undefined) {
@@ -85,6 +88,8 @@ function errMsg(e) {
     return "error";
   }
 }
+
+let includesLower = ((s,q)=>String(s).toLowerCase().includes(String(q)));
 
 let jsonParse = (s => globalThis.JSON.parse(s));
 
@@ -102,63 +107,105 @@ function stringifyJson(j) {
   return jsonStringify(j);
 }
 
+function cut(s, n) {
+  if (s.length <= n) {
+    return s;
+  } else {
+    return s.slice(0, n) + "…";
+  }
+}
+
 function AdminTasks(props) {
-  let match = React.useState(() => "");
-  let setTitle = match[1];
-  let title$1 = match[0];
-  let match$1 = React.useState(() => "");
-  let setStatement = match$1[1];
-  let statement = match$1[0];
+  let match = React.useState(() => []);
+  let setItems = match[1];
+  let items = match[0];
+  let match$1 = React.useState(() => true);
+  let setLoading = match$1[1];
+  let loading = match$1[0];
   let match$2 = React.useState(() => "");
-  let setStarterCode = match$2[1];
-  let starterCode = match$2[0];
-  let match$3 = React.useState(() => "1");
-  let setTopicId = match$3[1];
-  let topicId = match$3[0];
+  let setErr = match$2[1];
+  let err = match$2[0];
+  let match$3 = React.useState(() => "");
+  let setFilter = match$3[1];
+  let filter = match$3[0];
   let match$4 = React.useState(() => false);
-  let setCreating = match$4[1];
-  let creating = match$4[0];
-  let match$5 = React.useState(() => {});
-  let setCreatedId = match$5[1];
-  let createdId = match$5[0];
+  let setShowArchived = match$4[1];
+  let showArchived = match$4[0];
+  let match$5 = React.useState(() => "");
+  let setTopicId = match$5[1];
+  let topicId = match$5[0];
   let match$6 = React.useState(() => "");
-  let setCreateErr = match$6[1];
-  let createErr = match$6[0];
+  let setTitle = match$6[1];
+  let title$1 = match$6[0];
   let match$7 = React.useState(() => "");
-  let setTaskId = match$7[1];
-  let taskId = match$7[0];
-  let match$8 = React.useState(() => []);
-  let setTests = match$8[1];
-  let tests = match$8[0];
-  let match$9 = React.useState(() => false);
-  let setLoadingTests = match$9[1];
-  let loadingTests = match$9[0];
+  let setStatement = match$7[1];
+  let statement = match$7[0];
+  let match$8 = React.useState(() => "");
+  let setStarterCode = match$8[1];
+  let starterCode = match$8[0];
+  let match$9 = React.useState(() => "");
+  let setRunner = match$9[1];
+  let runner = match$9[0];
   let match$10 = React.useState(() => "");
-  let setTestsErr = match$10[1];
-  let testsErr = match$10[0];
-  let match$11 = React.useState(() => "");
-  let setNewName = match$11[1];
-  let newName = match$11[0];
-  let match$12 = React.useState(() => "0");
-  let setNewOrder = match$12[1];
-  let newOrder = match$12[0];
+  let setRunnerBody = match$10[1];
+  let runnerBody = match$10[0];
+  let match$11 = React.useState(() => false);
+  let setCreating = match$11[1];
+  let creating = match$11[0];
+  let match$12 = React.useState(() => {});
+  let setCreatedId = match$12[1];
+  let createdId = match$12[0];
   let match$13 = React.useState(() => "");
-  let setNewInput = match$13[1];
-  let newInput = match$13[0];
+  let setCreateErr = match$13[1];
+  let createErr = match$13[0];
   let match$14 = React.useState(() => "");
-  let setNewExpected = match$14[1];
-  let newExpected = match$14[0];
-  let match$15 = React.useState(() => false);
-  let setAdding = match$15[1];
-  let adding = match$15[0];
-  let loadTests = id => {
-    if (id === "") {
+  let setSelectedTaskId = match$14[1];
+  let selectedTaskId = match$14[0];
+  let match$15 = React.useState(() => []);
+  let setTests = match$15[1];
+  let tests = match$15[0];
+  let match$16 = React.useState(() => false);
+  let setLoadingTests = match$16[1];
+  let loadingTests = match$16[0];
+  let match$17 = React.useState(() => "");
+  let setTestsErr = match$17[1];
+  let testsErr = match$17[0];
+  let match$18 = React.useState(() => "");
+  let setNewName = match$18[1];
+  let newName = match$18[0];
+  let match$19 = React.useState(() => "0");
+  let setNewOrder = match$19[1];
+  let newOrder = match$19[0];
+  let match$20 = React.useState(() => "");
+  let setNewInput = match$20[1];
+  let newInput = match$20[0];
+  let match$21 = React.useState(() => "");
+  let setNewExpected = match$21[1];
+  let newExpected = match$21[0];
+  let match$22 = React.useState(() => false);
+  let setAdding = match$22[1];
+  let adding = match$22[0];
+  let load = () => {
+    setLoading(param => true);
+    setErr(param => "");
+    Stdlib_Promise.$$catch(AdminTasksApi.list().then(xs => {
+      setItems(param => xs);
+      setLoading(param => false);
+      return Promise.resolve();
+    }), e => {
+      setErr(param => errMsg(e));
+      setLoading(param => false);
+      return Promise.resolve();
+    });
+  };
+  let loadTests = taskId => {
+    if (taskId === "") {
       setTests(param => []);
       return setTestsErr(param => "");
     } else {
       setLoadingTests(param => true);
       setTestsErr(param => "");
-      Stdlib_Promise.$$catch(AdminTestsApi.list(id).then(xs => {
+      Stdlib_Promise.$$catch(AdminTestsApi.list(taskId).then(xs => {
         setTests(param => xs);
         setLoadingTests(param => false);
         return Promise.resolve();
@@ -171,24 +218,35 @@ function AdminTasks(props) {
     }
   };
   React.useEffect(() => {
-    loadTests(taskId);
-  }, [taskId]);
+    load();
+  }, []);
+  React.useEffect(() => {
+    loadTests(selectedTaskId);
+  }, [selectedTaskId]);
   let onCreate = () => {
+    if (topicId.trim() === "" || title$1.trim() === "") {
+      return setCreateErr(param => "topic_id and title are required");
+    }
     setCreating(param => true);
     setCreateErr(param => "");
     setCreatedId(param => {});
+    let r = runner.trim();
+    let rb = runnerBody.trim();
+    let dto_runner = r === "" ? undefined : r;
+    let dto_runner_body = rb === "" ? undefined : rb;
     let dto = {
       topic_id: topicId,
       title: title$1,
       statement: statement,
       starter_code: starterCode,
-      runner: undefined,
-      runner_body: undefined
+      runner: dto_runner,
+      runner_body: dto_runner_body
     };
-    Stdlib_Promise.$$catch(AdminTasksApi.create(dto).then(r => {
-      setCreatedId(param => r.id);
-      setTaskId(param => r.id);
+    Stdlib_Promise.$$catch(AdminTasksApi.create(dto).then(res => {
+      setCreatedId(param => res.id);
+      setSelectedTaskId(param => res.id);
       setCreating(param => false);
+      load();
       return Promise.resolve();
     }), e => {
       setCreateErr(param => errMsg(e));
@@ -197,30 +255,30 @@ function AdminTasks(props) {
     });
   };
   let onAddTest = () => {
-    if (taskId === "") {
-      return setTestsErr(param => "Task id is required");
+    if (selectedTaskId === "") {
+      return setTestsErr(param => "Select task");
     }
     let match = parseJson(newInput);
     let match$1 = parseJson(newExpected);
     if (match !== undefined && match$1 !== undefined) {
       setAdding(param => true);
       setTestsErr(param => "");
-      let v = Stdlib_Int.fromString(newOrder, undefined);
+      let v = Stdlib_Int.fromString(newOrder.trim(), undefined);
       let order_index = v !== undefined ? v : 0;
-      let t_name = newName === "" ? "test" : newName;
+      let t_name = newName.trim() === "" ? "test" : newName;
       let t = {
         name: t_name,
         input_json: match,
         expected_json: match$1,
         order_index: order_index
       };
-      Stdlib_Promise.$$catch(AdminTestsApi.add(taskId, Belt_Array.make(1, t)).then(param => {
+      Stdlib_Promise.$$catch(AdminTestsApi.add(selectedTaskId, Belt_Array.make(1, t)).then(param => {
         setNewName(param => "");
         setNewInput(param => "");
         setNewExpected(param => "");
         setNewOrder(param => "0");
         setAdding(param => false);
-        loadTests(taskId);
+        loadTests(selectedTaskId);
         return Promise.resolve();
       }), e => {
         setTestsErr(param => errMsg(e));
@@ -231,30 +289,52 @@ function AdminTasks(props) {
     }
     setTestsErr(param => "Bad JSON in input_json or expected_json");
   };
-  let tmp = createErr === "" ? null : JsxRuntime.jsx("div", {
+  let q = filter.trim().toLowerCase();
+  let visible = Belt_Array.keep(items, t => {
+    let match = t.archived_at;
+    let archived = match !== undefined;
+    let okArchived = showArchived ? true : !archived;
+    let okFilter = q === "" ? true : includesLower(t.title, q) || includesLower(t.id, q) || includesLower(t.topic_id, q);
+    if (okArchived) {
+      return okFilter;
+    } else {
+      return false;
+    }
+  });
+  let tmp;
+  tmp = loading ? "Loading..." : (
+      err === "" ? "Tasks: " + visible.length.toString() : "Error: " + err
+    );
+  let tmp$1 = createErr === "" ? null : JsxRuntime.jsx("div", {
       children: "Error: " + createErr,
       className: error
     });
-  let tmp$1 = testsErr === "" ? null : JsxRuntime.jsx("div", {
+  let tmp$2 = err === "" ? null : JsxRuntime.jsx("div", {
+      children: "Error: " + err,
+      className: error
+    });
+  let tmp$3 = testsErr === "" ? null : JsxRuntime.jsx("div", {
       children: "Error: " + testsErr,
       className: error
     });
-  let tmp$2;
-  tmp$2 = loadingTests ? "Loading..." : (
-      taskId === "" ? "Set task id to load tests." : "Count: " + tests.length.toString()
+  let tmp$4 = selectedTaskId === "" ? "No task selected" : "Task: " + selectedTaskId;
+  let tmp$5;
+  tmp$5 = loadingTests ? "Loading..." : (
+      selectedTaskId === "" ? "Select task to load tests." : "Count: " + tests.length.toString()
     );
   return JsxRuntime.jsxs("div", {
     children: [
+      React.createElement(adminGuard, undefined),
       JsxRuntime.jsxs("div", {
         children: [
           JsxRuntime.jsxs("div", {
             children: [
               JsxRuntime.jsx("div", {
-                children: "Tasks",
+                children: "Tasks (admin)",
                 className: h1
               }),
               JsxRuntime.jsx("div", {
-                children: "Create tasks and manage tests.",
+                children: tmp,
                 className: sub
               })
             ]
@@ -273,13 +353,13 @@ function AdminTasks(props) {
             children: "Create task",
             className: h2
           }),
-          tmp,
+          tmp$1,
           JsxRuntime.jsxs("div", {
             children: [
               JsxRuntime.jsxs("div", {
                 children: [
                   JsxRuntime.jsx("div", {
-                    children: "Topic id",
+                    children: "topic_id",
                     className: label
                   }),
                   JsxRuntime.jsx("input", {
@@ -293,7 +373,7 @@ function AdminTasks(props) {
               JsxRuntime.jsxs("div", {
                 children: [
                   JsxRuntime.jsx("div", {
-                    children: "Title",
+                    children: "title",
                     className: label
                   }),
                   JsxRuntime.jsx("input", {
@@ -307,7 +387,7 @@ function AdminTasks(props) {
               JsxRuntime.jsxs("div", {
                 children: [
                   JsxRuntime.jsx("div", {
-                    children: "Statement",
+                    children: "statement",
                     className: label
                   }),
                   JsxRuntime.jsx("textarea", {
@@ -321,7 +401,7 @@ function AdminTasks(props) {
               JsxRuntime.jsxs("div", {
                 children: [
                   JsxRuntime.jsx("div", {
-                    children: "Starter code",
+                    children: "starter_code",
                     className: label
                   }),
                   JsxRuntime.jsx("textarea", {
@@ -334,16 +414,55 @@ function AdminTasks(props) {
               }),
               JsxRuntime.jsxs("div", {
                 children: [
+                  JsxRuntime.jsx("div", {
+                    children: "runner (optional)",
+                    className: label
+                  }),
+                  JsxRuntime.jsx("input", {
+                    className: input,
+                    value: runner,
+                    onChange: e => setRunner(param => e.target.value)
+                  })
+                ],
+                className: field
+              }),
+              JsxRuntime.jsxs("div", {
+                children: [
+                  JsxRuntime.jsx("div", {
+                    children: "runner_body (optional)",
+                    className: label
+                  }),
+                  JsxRuntime.jsx("textarea", {
+                    className: textarea,
+                    value: runnerBody,
+                    onChange: e => setRunnerBody(param => e.target.value)
+                  })
+                ],
+                className: field
+              }),
+              JsxRuntime.jsxs("div", {
+                children: [
                   JsxRuntime.jsx("button", {
                     children: creating ? "Creating..." : "Create",
                     className: smallBtn,
                     disabled: creating,
                     onClick: param => onCreate()
                   }),
+                  JsxRuntime.jsx("button", {
+                    children: loading ? "Reloading..." : "Reload list",
+                    className: smallBtn,
+                    disabled: loading,
+                    onClick: param => load()
+                  }),
+                  JsxRuntime.jsx("button", {
+                    children: showArchived ? "Showing archived" : "Hide archived",
+                    className: smallBtn,
+                    onClick: param => setShowArchived(v => !v)
+                  }),
                   createdId !== undefined ? JsxRuntime.jsxs("div", {
                       children: [
                         JsxRuntime.jsx("div", {
-                          children: "Created id: " + createdId,
+                          children: "Created: " + createdId,
                           className: badge
                         }),
                         JsxRuntime.jsx(NextLink.make, {
@@ -366,7 +485,7 @@ function AdminTasks(props) {
       JsxRuntime.jsxs("div", {
         children: [
           JsxRuntime.jsx("div", {
-            children: "Manage task",
+            children: "Tasks",
             className: h2
           }),
           JsxRuntime.jsxs("div", {
@@ -374,52 +493,119 @@ function AdminTasks(props) {
               JsxRuntime.jsxs("div", {
                 children: [
                   JsxRuntime.jsx("div", {
-                    children: "Task id",
+                    children: "filter",
                     className: label
                   }),
                   JsxRuntime.jsx("input", {
                     className: input,
-                    value: taskId,
-                    onChange: e => setTaskId(param => e.target.value)
+                    value: filter,
+                    onChange: e => setFilter(param => e.target.value)
                   })
                 ],
                 className: field
               }),
               JsxRuntime.jsxs("div", {
                 children: [
-                  JsxRuntime.jsx("button", {
-                    children: loadingTests ? "Loading tests..." : "Reload tests",
-                    className: smallBtn,
-                    disabled: loadingTests,
-                    onClick: param => loadTests(taskId)
+                  JsxRuntime.jsx("div", {
+                    children: "selected_task_id",
+                    className: label
                   }),
-                  JsxRuntime.jsx("button", {
-                    children: "Archive",
-                    className: smallBtn,
-                    disabled: taskId === "",
-                    onClick: param => {
-                      if (taskId !== "") {
-                        AdminTasksApi.archive(taskId).then(param => Promise.resolve());
-                        return;
-                      }
-                    }
-                  }),
-                  JsxRuntime.jsx("button", {
-                    children: "Unarchive",
-                    className: smallBtn,
-                    disabled: taskId === "",
-                    onClick: param => {
-                      if (taskId !== "") {
-                        AdminTasksApi.unarchive(taskId).then(param => Promise.resolve());
-                        return;
-                      }
-                    }
+                  JsxRuntime.jsx("input", {
+                    className: input,
+                    value: selectedTaskId,
+                    onChange: e => setSelectedTaskId(param => e.target.value)
                   })
                 ],
+                className: field
+              }),
+              JsxRuntime.jsx("div", {
+                children: JsxRuntime.jsx("div", {
+                  children: "Total: " + items.length.toString(),
+                  className: badge
+                }),
                 className: row
               })
             ],
             className: grid
+          }),
+          tmp$2,
+          JsxRuntime.jsx("div", {
+            children: Belt_Array.map(visible, t => {
+              let match = t.archived_at;
+              let archived = match !== undefined;
+              let s = t.archived_at;
+              return JsxRuntime.jsxs("div", {
+                children: [
+                  JsxRuntime.jsxs("div", {
+                    children: [
+                      JsxRuntime.jsx("div", {
+                        children: t.title + (
+                          archived ? " (archived)" : ""
+                        ),
+                        className: title
+                      }),
+                      JsxRuntime.jsx("div", {
+                        children: "id " + t.id + " • topic " + t.topic_id,
+                        className: meta
+                      }),
+                      JsxRuntime.jsx("div", {
+                        children: "created_at " + t.created_at,
+                        className: meta
+                      }),
+                      s !== undefined ? JsxRuntime.jsx("div", {
+                          children: "archived_at " + s,
+                          className: meta
+                        }) : null
+                    ],
+                    className: left
+                  }),
+                  JsxRuntime.jsxs("div", {
+                    children: [
+                      JsxRuntime.jsx("button", {
+                        children: "Select",
+                        className: smallBtn,
+                        onClick: param => setSelectedTaskId(param => t.id)
+                      }),
+                      JsxRuntime.jsx(NextLink.make, {
+                        href: "/task/" + t.id,
+                        className: smallBtn,
+                        children: "Open"
+                      }),
+                      archived ? JsxRuntime.jsx("button", {
+                          children: "Unarchive",
+                          className: smallBtn,
+                          onClick: param => {
+                            let id = t.id;
+                            if (id !== "") {
+                              Stdlib_Promise.$$catch(AdminTasksApi.unarchive(id).then(param => {
+                                load();
+                                return Promise.resolve();
+                              }), param => Promise.resolve());
+                              return;
+                            }
+                          }
+                        }) : JsxRuntime.jsx("button", {
+                          children: "Archive",
+                          className: smallBtn,
+                          onClick: param => {
+                            let id = t.id;
+                            if (id !== "") {
+                              Stdlib_Promise.$$catch(AdminTasksApi.archive(id).then(param => {
+                                load();
+                                return Promise.resolve();
+                              }), param => Promise.resolve());
+                              return;
+                            }
+                          }
+                        })
+                    ],
+                    className: row
+                  })
+                ],
+                className: testRow
+              }, t.id);
+            }),
+            className: list
           })
         ],
         className: card
@@ -430,13 +616,13 @@ function AdminTasks(props) {
             children: "Add test",
             className: h2
           }),
-          tmp$1,
+          tmp$3,
           JsxRuntime.jsxs("div", {
             children: [
               JsxRuntime.jsxs("div", {
                 children: [
                   JsxRuntime.jsx("div", {
-                    children: "Name",
+                    children: "name",
                     className: label
                   }),
                   JsxRuntime.jsx("input", {
@@ -450,7 +636,7 @@ function AdminTasks(props) {
               JsxRuntime.jsxs("div", {
                 children: [
                   JsxRuntime.jsx("div", {
-                    children: "Order index",
+                    children: "order_index",
                     className: label
                   }),
                   JsxRuntime.jsx("input", {
@@ -489,13 +675,25 @@ function AdminTasks(props) {
                 ],
                 className: field
               }),
-              JsxRuntime.jsx("div", {
-                children: JsxRuntime.jsx("button", {
-                  children: adding ? "Adding..." : "Add test",
-                  className: smallBtn,
-                  disabled: adding,
-                  onClick: param => onAddTest()
-                }),
+              JsxRuntime.jsxs("div", {
+                children: [
+                  JsxRuntime.jsx("button", {
+                    children: adding ? "Adding..." : "Add test",
+                    className: smallBtn,
+                    disabled: adding,
+                    onClick: param => onAddTest()
+                  }),
+                  JsxRuntime.jsx("button", {
+                    children: loadingTests ? "Loading..." : "Reload tests",
+                    className: smallBtn,
+                    disabled: loadingTests,
+                    onClick: param => loadTests(selectedTaskId)
+                  }),
+                  JsxRuntime.jsx("div", {
+                    children: tmp$4,
+                    className: badge
+                  })
+                ],
                 className: row
               })
             ],
@@ -511,7 +709,7 @@ function AdminTasks(props) {
             className: h2
           }),
           JsxRuntime.jsx("div", {
-            children: tmp$2,
+            children: tmp$5,
             className: sub
           }),
           JsxRuntime.jsx("div", {
@@ -524,11 +722,11 @@ function AdminTasks(props) {
                       className: title
                     }),
                     JsxRuntime.jsx("div", {
-                      children: "input: " + jsonStringify(t.input_json),
+                      children: "input: " + cut(jsonStringify(t.input_json), 600),
                       className: meta
                     }),
                     JsxRuntime.jsx("div", {
-                      children: "expected: " + jsonStringify(t.expected_json),
+                      children: "expected: " + cut(jsonStringify(t.expected_json), 600),
                       className: meta
                     })
                   ],
@@ -539,10 +737,10 @@ function AdminTasks(props) {
                   className: smallBtn,
                   onClick: param => {
                     let id = t.id;
-                    AdminTestsApi.deleteOne(id).then(param => {
-                      loadTests(taskId);
+                    Stdlib_Promise.$$catch(AdminTestsApi.deleteOne(id).then(param => {
+                      loadTests(selectedTaskId);
                       return Promise.resolve();
-                    });
+                    }), param => Promise.resolve());
                   }
                 })
               ],
@@ -562,11 +760,14 @@ let make = AdminTasks;
 
 export {
   S,
+  adminGuard,
   errMsg,
+  includesLower,
   jsonParse,
   jsonStringify,
   parseJson,
   stringifyJson,
+  cut,
   make,
 }
 /* page Not a pure module */

@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import * as NextLink from "../../bindings/NextLink.res.mjs";
-import * as TasksApi from "../../api/tasks/TasksApi.res.mjs";
+import * as TopicsApi from "../../api/topics/TopicsApi.res.mjs";
+import * as Belt_Array from "@rescript/runtime/lib/es6/Belt_Array.js";
 import * as Stdlib_JsExn from "@rescript/runtime/lib/es6/Stdlib_JsExn.js";
 import * as Stdlib_Promise from "@rescript/runtime/lib/es6/Stdlib_Promise.js";
 import * as JsxRuntime from "react/jsx-runtime";
@@ -16,26 +17,50 @@ let h1 = TopicModuleScss.h1;
 
 let sub = TopicModuleScss.sub;
 
-let grid = TopicModuleScss.grid;
+let btn = TopicModuleScss.btn;
 
 let card = TopicModuleScss.card;
 
-let cardTitle = TopicModuleScss.cardTitle;
+let h2 = TopicModuleScss.h2;
 
-let cardMeta = TopicModuleScss.cardMeta;
+let list = TopicModuleScss.list;
 
-let btn = TopicModuleScss.btn;
+let p = TopicModuleScss.p;
+
+let pMeta = TopicModuleScss.pMeta;
+
+let pIndex = TopicModuleScss.pIndex;
+
+let pBody = TopicModuleScss.pBody;
+
+let code = TopicModuleScss.code;
+
+let tasksGrid = TopicModuleScss.tasksGrid;
+
+let taskCard = TopicModuleScss.taskCard;
+
+let taskTitle = TopicModuleScss.taskTitle;
+
+let taskMeta = TopicModuleScss.taskMeta;
 
 let S = {
   page: page,
   top: top,
   h1: h1,
   sub: sub,
-  grid: grid,
+  btn: btn,
   card: card,
-  cardTitle: cardTitle,
-  cardMeta: cardMeta,
-  btn: btn
+  h2: h2,
+  list: list,
+  p: p,
+  pMeta: pMeta,
+  pIndex: pIndex,
+  pBody: pBody,
+  code: code,
+  tasksGrid: tasksGrid,
+  taskCard: taskCard,
+  taskTitle: taskTitle,
+  taskMeta: taskMeta
 };
 
 function errMsg(e) {
@@ -47,37 +72,50 @@ function errMsg(e) {
   }
 }
 
+let sortParagraphs = ((xs) => {
+  const ys = xs.slice();
+  ys.sort((a,b) => (a.sort_key|0) - (b.sort_key|0));
+  return ys;
+});
+
 function Topic(props) {
   let topicId = props.topicId;
-  let match = React.useState(() => []);
-  let setTasks = match[1];
-  let tasks = match[0];
+  let match = React.useState(() => {});
+  let setPage = match[1];
+  let page$1 = match[0];
   let match$1 = React.useState(() => "");
   let setErr = match$1[1];
   let err = match$1[0];
   let match$2 = React.useState(() => true);
   let setLoading = match$2[1];
+  let loading = match$2[0];
   React.useEffect(() => {
     if (topicId === "") {
+      setPage(param => {});
+      setErr(param => "");
       setLoading(param => false);
     } else {
       setLoading(param => true);
-      Stdlib_Promise.$$catch(TasksApi.listByTopic(topicId).then(ts => {
-        setTasks(param => ts);
+      setErr(param => "");
+      Stdlib_Promise.$$catch(TopicsApi.page(topicId).then(p => {
+        setPage(param => p);
         setErr(param => "");
         setLoading(param => false);
         return Promise.resolve();
       }), e => {
         setErr(param => errMsg(e));
+        setPage(param => {});
         setLoading(param => false);
         return Promise.resolve();
       });
     }
   }, [topicId]);
-  let tmp = err === "" ? null : JsxRuntime.jsx("div", {
-      children: "Error: " + err,
-      className: sub
-    });
+  let title = page$1 !== undefined ? page$1.topic.title : "Topic " + topicId;
+  let subtitle = loading ? "Loading..." : (
+      err !== "" ? "Error: " + err : (
+          page$1 !== undefined ? page$1.paragraphs.length.toString() + " paragraphs • " + page$1.tasks.length.toString() + " tasks" : "No data"
+        )
+    );
   return JsxRuntime.jsxs("div", {
     children: [
       JsxRuntime.jsxs("div", {
@@ -85,14 +123,13 @@ function Topic(props) {
           JsxRuntime.jsxs("div", {
             children: [
               JsxRuntime.jsx("div", {
-                children: "Topic " + topicId,
+                children: title,
                 className: h1
               }),
               JsxRuntime.jsx("div", {
-                children: match$2[0] ? "Loading..." : tasks.length.toString() + " tasks",
+                children: subtitle,
                 className: sub
-              }),
-              tmp
+              })
             ]
           }),
           JsxRuntime.jsx(NextLink.make, {
@@ -103,24 +140,78 @@ function Topic(props) {
         ],
         className: top
       }),
-      JsxRuntime.jsx("div", {
-        children: tasks.map(t => JsxRuntime.jsx(NextLink.make, {
-          href: "/task/" + t.id,
-          className: card,
-          children: JsxRuntime.jsxs(JsxRuntime.Fragment, {
-            children: [
-              JsxRuntime.jsx("div", {
-                children: t.title,
-                className: cardTitle
+      JsxRuntime.jsxs("div", {
+        children: [
+          JsxRuntime.jsx("div", {
+            children: "Paragraphs",
+            className: h2
+          }),
+          page$1 !== undefined ? JsxRuntime.jsx("div", {
+              children: Belt_Array.map(sortParagraphs(page$1.paragraphs), pp => {
+                let c = pp.code;
+                return JsxRuntime.jsxs("div", {
+                  children: [
+                    JsxRuntime.jsx("div", {
+                      children: JsxRuntime.jsx("div", {
+                        children: "",
+                        className: pIndex
+                      }),
+                      className: pMeta
+                    }),
+                    JsxRuntime.jsx("div", {
+                      children: pp.body,
+                      className: pBody
+                    }),
+                    c !== undefined ? JsxRuntime.jsx("pre", {
+                        children: c,
+                        className: code
+                      }) : null
+                  ],
+                  className: p
+                }, pp.id);
               }),
-              JsxRuntime.jsx("div", {
-                children: "Open task",
-                className: cardMeta
-              })
-            ]
-          })
-        }, t.id)),
-        className: grid
+              className: list
+            }) : JsxRuntime.jsx("div", {
+              children: loading ? "Loading..." : (
+                  err !== "" ? "Error: " + err : "No paragraphs"
+                ),
+              className: sub
+            })
+        ],
+        className: card
+      }),
+      JsxRuntime.jsxs("div", {
+        children: [
+          JsxRuntime.jsx("div", {
+            children: "Tasks",
+            className: h2
+          }),
+          page$1 !== undefined ? JsxRuntime.jsx("div", {
+              children: Belt_Array.map(page$1.tasks, t => JsxRuntime.jsx(NextLink.make, {
+                href: "/task/" + t.id,
+                className: taskCard,
+                children: JsxRuntime.jsxs(JsxRuntime.Fragment, {
+                  children: [
+                    JsxRuntime.jsx("div", {
+                      children: t.title,
+                      className: taskTitle
+                    }),
+                    JsxRuntime.jsx("div", {
+                      children: "Open task",
+                      className: taskMeta
+                    })
+                  ]
+                })
+              }, t.id)),
+              className: tasksGrid
+            }) : JsxRuntime.jsx("div", {
+              children: loading ? "Loading..." : (
+                  err !== "" ? "Error: " + err : "No tasks"
+                ),
+              className: sub
+            })
+        ],
+        className: card
       })
     ],
     className: page
@@ -132,6 +223,7 @@ let make = Topic;
 export {
   S,
   errMsg,
+  sortParagraphs,
   make,
 }
 /* page Not a pure module */

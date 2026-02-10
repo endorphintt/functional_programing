@@ -3,11 +3,13 @@
 import * as React from "react";
 import * as NextLink from "../../bindings/NextLink.res.mjs";
 import * as Belt_Array from "@rescript/runtime/lib/es6/Belt_Array.js";
+import * as Stdlib_Int from "@rescript/runtime/lib/es6/Stdlib_Int.js";
 import * as Stdlib_JsExn from "@rescript/runtime/lib/es6/Stdlib_JsExn.js";
 import * as AdminTopicsApi from "../../api/admin/AdminTopicsApi.res.mjs";
 import * as Stdlib_Promise from "@rescript/runtime/lib/es6/Stdlib_Promise.js";
 import * as JsxRuntime from "react/jsx-runtime";
 import * as AdminTopicsModuleScss from "./AdminTopics.module.scss";
+import AdminGuardJs from "../../shared/auth/AdminGuard.js";
 
 let page = AdminTopicsModuleScss.page;
 
@@ -30,6 +32,8 @@ let field = AdminTopicsModuleScss.field;
 let label = AdminTopicsModuleScss.label;
 
 let input = AdminTopicsModuleScss.input;
+
+let textarea = AdminTopicsModuleScss.textarea;
 
 let row = AdminTopicsModuleScss.row;
 
@@ -65,6 +69,7 @@ let S = {
   field: field,
   label: label,
   input: input,
+  textarea: textarea,
   row: row,
   smallBtn: smallBtn,
   pill: pill,
@@ -78,6 +83,8 @@ let S = {
   badge: badge
 };
 
+let adminGuard = AdminGuardJs;
+
 function errMsg(e) {
   let m = Stdlib_JsExn.message(e);
   if (m !== undefined) {
@@ -88,6 +95,15 @@ function errMsg(e) {
 }
 
 let includesLower = ((s,q)=>String(s).toLowerCase().includes(String(q)));
+
+let cut = ((s,n)=>{s=String(s||'');return s.length<=n?s:(s.slice(0,n)+'…')});
+
+function $$parseInt(s) {
+  let v = Stdlib_Int.fromString(s.trim(), undefined);
+  if (v !== undefined) {
+    return v;
+  }
+}
 
 function AdminTopics(props) {
   let match = React.useState(() => []);
@@ -114,7 +130,31 @@ function AdminTopics(props) {
   let match$7 = React.useState(() => false);
   let setShowArchived = match$7[1];
   let showArchived = match$7[0];
-  let load = () => {
+  let match$8 = React.useState(() => {});
+  let setSelectedId = match$8[1];
+  let selectedId = match$8[0];
+  let match$9 = React.useState(() => {});
+  let setPage = match$9[1];
+  let page$1 = match$9[0];
+  let match$10 = React.useState(() => false);
+  let setLoadingPage = match$10[1];
+  let loadingPage = match$10[0];
+  let match$11 = React.useState(() => "");
+  let setPageErr = match$11[1];
+  let pageErr = match$11[0];
+  let match$12 = React.useState(() => "0");
+  let setPSortKey = match$12[1];
+  let pSortKey = match$12[0];
+  let match$13 = React.useState(() => "");
+  let setPBody = match$13[1];
+  let pBody = match$13[0];
+  let match$14 = React.useState(() => "");
+  let setPCode = match$14[1];
+  let pCode = match$14[0];
+  let match$15 = React.useState(() => false);
+  let setAddingP = match$15[1];
+  let addingP = match$15[0];
+  let loadList = () => {
     setLoading(param => true);
     setErr(param => "");
     Stdlib_Promise.$$catch(AdminTopicsApi.listAdmin().then(xs => {
@@ -127,9 +167,30 @@ function AdminTopics(props) {
       return Promise.resolve();
     });
   };
+  let loadPage = id => {
+    setLoadingPage(param => true);
+    setPageErr(param => "");
+    setPage(param => {});
+    Stdlib_Promise.$$catch(AdminTopicsApi.pageAdmin(id).then(p => {
+      setPage(param => p);
+      setLoadingPage(param => false);
+      return Promise.resolve();
+    }), e => {
+      setPageErr(param => errMsg(e));
+      setLoadingPage(param => false);
+      return Promise.resolve();
+    });
+  };
   React.useEffect(() => {
-    load();
+    loadList();
   }, []);
+  React.useEffect(() => {
+    if (selectedId !== undefined) {
+      loadPage(selectedId);
+    } else {
+      setPage(param => {});
+    }
+  }, [selectedId]);
   let onCreate = () => {
     if (title$1.trim() === "") {
       return setErr(param => "Title is required");
@@ -139,11 +200,12 @@ function AdminTopics(props) {
       Stdlib_Promise.$$catch(AdminTopicsApi.create({
         title: title$1,
         subtitle: subtitle
-      }).then(param => {
+      }).then(r => {
         setTitle(param => "");
         setSubtitle(param => "");
         setCreating(param => false);
-        load();
+        loadList();
+        setSelectedId(param => r.id);
         return Promise.resolve();
       }), e => {
         setErr(param => errMsg(e));
@@ -152,6 +214,38 @@ function AdminTopics(props) {
       });
       return;
     }
+  };
+  let onAddParagraph = () => {
+    if (selectedId === undefined) {
+      return setPageErr(param => "Select a topic");
+    }
+    let sort_key = $$parseInt(pSortKey);
+    if (sort_key === undefined) {
+      return setPageErr(param => "Bad sort_key");
+    }
+    if (pBody.trim() === "") {
+      return setPageErr(param => "Body is required");
+    }
+    setAddingP(param => true);
+    setPageErr(param => "");
+    let code = pCode.trim() === "" ? undefined : pCode;
+    let p = {
+      sort_key: sort_key,
+      body: pBody,
+      code: code
+    };
+    Stdlib_Promise.$$catch(AdminTopicsApi.addParagraphs(selectedId, [p]).then(param => {
+      setPSortKey(param => "0");
+      setPBody(param => "");
+      setPCode(param => "");
+      setAddingP(param => false);
+      loadPage(selectedId);
+      return Promise.resolve();
+    }), e => {
+      setPageErr(param => errMsg(e));
+      setAddingP(param => false);
+      return Promise.resolve();
+    });
   };
   let q = filter.trim().toLowerCase();
   let visible = Belt_Array.keep(items, it => {
@@ -168,8 +262,22 @@ function AdminTopics(props) {
       children: "Error: " + err,
       className: error
     });
+  let tmp$1;
+  tmp$1 = selectedId !== undefined ? (
+      loadingPage ? "Loading " + selectedId + "..." : (
+          pageErr === "" ? (
+              page$1 !== undefined ? "Paragraphs: " + page$1.paragraphs.length.toString() + " • Tasks: " + page$1.tasks.length.toString() : "No data"
+            ) : "Error: " + pageErr
+        )
+    ) : "Select a topic to manage paragraphs.";
+  let tmp$2 = pageErr === "" ? null : JsxRuntime.jsx("div", {
+      children: "Error: " + pageErr,
+      className: error
+    });
   return JsxRuntime.jsxs("div", {
     children: [
+      React.createElement(adminGuard, undefined),
+      React.createElement(adminGuard, undefined),
       JsxRuntime.jsxs("div", {
         children: [
           JsxRuntime.jsxs("div", {
@@ -241,7 +349,7 @@ function AdminTopics(props) {
                     children: loading ? "Reloading..." : "Reload",
                     className: smallBtn,
                     disabled: loading,
-                    onClick: param => load()
+                    onClick: param => loadList()
                   })
                 ],
                 className: row
@@ -295,6 +403,7 @@ function AdminTopics(props) {
             children: Belt_Array.map(visible, it => {
               let match = it.archived_at;
               let archived = match !== undefined;
+              let selected = selectedId !== undefined ? selectedId === it.id : false;
               let s = it.archived_at;
               return JsxRuntime.jsxs("div", {
                 children: [
@@ -302,6 +411,8 @@ function AdminTopics(props) {
                     children: [
                       JsxRuntime.jsx("div", {
                         children: it.title + (
+                          selected ? " • selected" : ""
+                        ) + (
                           archived ? " (archived)" : ""
                         ),
                         className: title
@@ -321,36 +432,210 @@ function AdminTopics(props) {
                     ],
                     className: left
                   }),
-                  JsxRuntime.jsx("div", {
-                    children: archived ? JsxRuntime.jsx("button", {
-                        children: "Unarchive",
+                  JsxRuntime.jsxs("div", {
+                    children: [
+                      JsxRuntime.jsx("button", {
+                        children: "Open",
                         className: smallBtn,
-                        onClick: param => {
-                          let id = it.id;
-                          AdminTopicsApi.unarchive(id).then(param => {
-                            load();
-                            return Promise.resolve();
-                          });
-                        }
-                      }) : JsxRuntime.jsx("button", {
-                        children: "Archive",
-                        className: smallBtn,
-                        onClick: param => {
-                          let id = it.id;
-                          AdminTopicsApi.archive(id).then(param => {
-                            load();
-                            return Promise.resolve();
-                          });
-                        }
+                        onClick: param => setSelectedId(param => it.id)
                       }),
-                    className: actions
+                      archived ? JsxRuntime.jsx("button", {
+                          children: "Unarchive",
+                          className: smallBtn,
+                          onClick: param => {
+                            let id = it.id;
+                            AdminTopicsApi.unarchive(id).then(param => {
+                              loadList();
+                              return Promise.resolve();
+                            });
+                          }
+                        }) : JsxRuntime.jsx("button", {
+                          children: "Archive",
+                          className: smallBtn,
+                          onClick: param => {
+                            let id = it.id;
+                            AdminTopicsApi.archive(id).then(param => {
+                              loadList();
+                              return Promise.resolve();
+                            });
+                          }
+                        })
+                    ],
+                    className: actions,
+                    onClick: e => {
+                      e.stopPropagation();
+                    }
                   })
                 ],
-                className: item
+                className: item,
+                onClick: param => setSelectedId(param => it.id)
               }, it.id);
             }),
             className: list
           })
+        ],
+        className: card
+      }),
+      JsxRuntime.jsxs("div", {
+        children: [
+          JsxRuntime.jsx("div", {
+            children: "Topic details",
+            className: h2
+          }),
+          JsxRuntime.jsx("div", {
+            children: tmp$1,
+            className: sub
+          }),
+          tmp$2,
+          page$1 !== undefined ? JsxRuntime.jsxs("div", {
+              children: [
+                JsxRuntime.jsxs("div", {
+                  children: [
+                    JsxRuntime.jsx("div", {
+                      children: "sort_key",
+                      className: label
+                    }),
+                    JsxRuntime.jsx("input", {
+                      className: input,
+                      value: pSortKey,
+                      onChange: e => setPSortKey(param => e.target.value)
+                    })
+                  ],
+                  className: field
+                }),
+                JsxRuntime.jsxs("div", {
+                  children: [
+                    JsxRuntime.jsx("div", {
+                      children: "body",
+                      className: label
+                    }),
+                    JsxRuntime.jsx("textarea", {
+                      className: textarea,
+                      value: pBody,
+                      onChange: e => setPBody(param => e.target.value)
+                    })
+                  ],
+                  className: field
+                }),
+                JsxRuntime.jsxs("div", {
+                  children: [
+                    JsxRuntime.jsx("div", {
+                      children: "code (optional)",
+                      className: label
+                    }),
+                    JsxRuntime.jsx("textarea", {
+                      className: textarea,
+                      value: pCode,
+                      onChange: e => setPCode(param => e.target.value)
+                    })
+                  ],
+                  className: field
+                }),
+                JsxRuntime.jsxs("div", {
+                  children: [
+                    JsxRuntime.jsx("button", {
+                      children: addingP ? "Adding..." : "Add paragraph",
+                      className: smallBtn,
+                      disabled: addingP || loadingPage,
+                      onClick: param => onAddParagraph()
+                    }),
+                    JsxRuntime.jsx("button", {
+                      children: "Reload details",
+                      className: smallBtn,
+                      disabled: loadingPage,
+                      onClick: param => loadPage(page$1.topic.id)
+                    })
+                  ],
+                  className: row
+                }),
+                JsxRuntime.jsx("div", {
+                  children: "Paragraphs",
+                  className: h2
+                }),
+                JsxRuntime.jsx("div", {
+                  children: Belt_Array.map(page$1.paragraphs, pp => {
+                    let c = pp.code;
+                    return JsxRuntime.jsxs("div", {
+                      children: [
+                        JsxRuntime.jsxs("div", {
+                          children: [
+                            JsxRuntime.jsx("div", {
+                              children: pp.sort_key.toString() + " • " + pp.id,
+                              className: title
+                            }),
+                            JsxRuntime.jsx("div", {
+                              children: cut(pp.body, 220),
+                              className: meta
+                            }),
+                            c !== undefined ? JsxRuntime.jsx("div", {
+                                children: "code: " + cut(c, 140),
+                                className: meta
+                              }) : JsxRuntime.jsx("div", {
+                                children: "code: —",
+                                className: meta
+                              })
+                          ],
+                          className: left
+                        }),
+                        JsxRuntime.jsx("div", {
+                          children: JsxRuntime.jsx("button", {
+                            children: "Delete",
+                            className: smallBtn,
+                            onClick: param => {
+                              let pid = pp.id;
+                              if (selectedId !== undefined) {
+                                AdminTopicsApi.deleteParagraph(pid).then(param => {
+                                  loadPage(selectedId);
+                                  return Promise.resolve();
+                                });
+                                return;
+                              }
+                            }
+                          }),
+                          className: actions
+                        })
+                      ],
+                      className: item
+                    }, pp.id);
+                  }),
+                  className: list
+                }),
+                JsxRuntime.jsx("div", {
+                  children: "Tasks",
+                  className: h2
+                }),
+                JsxRuntime.jsx("div", {
+                  children: Belt_Array.map(page$1.tasks, t => JsxRuntime.jsxs("div", {
+                    children: [
+                      JsxRuntime.jsxs("div", {
+                        children: [
+                          JsxRuntime.jsx("div", {
+                            children: t.title,
+                            className: title
+                          }),
+                          JsxRuntime.jsx("div", {
+                            children: "id " + t.id + " • " + t.created_at,
+                            className: meta
+                          })
+                        ],
+                        className: left
+                      }),
+                      JsxRuntime.jsx("div", {
+                        children: JsxRuntime.jsx(NextLink.make, {
+                          href: "/task/" + t.id,
+                          className: smallBtn,
+                          children: "Open"
+                        }),
+                        className: actions
+                      })
+                    ],
+                    className: item
+                  }, t.id)),
+                  className: list
+                })
+              ],
+              className: grid
+            }) : null
         ],
         className: card
       })
@@ -363,8 +648,11 @@ let make = AdminTopics;
 
 export {
   S,
+  adminGuard,
   errMsg,
   includesLower,
+  cut,
+  $$parseInt,
   make,
 }
 /* page Not a pure module */
