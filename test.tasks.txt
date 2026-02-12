@@ -1,0 +1,107 @@
+----Fibonacci
+
+let fib n =
+  let rec go a b i =
+    if i = 0 then a else go b (a + b) (i - 1)
+  in
+  go 0 1 n
+
+
+-----Sublists
+
+let sublists (xs: 'a list) : 'a list list =
+  let rec go xs =
+    match xs with
+    | [] -> [ [] ]
+    | x :: tl ->
+      let rest = go tl in
+      rest @ List.map (fun ys -> x :: ys) rest
+  in
+  go xs
+
+--- Rotate left
+
+let rotate_left (k: int) (xs: 'a list) : 'a list =
+  match xs with
+  | [] -> []
+  | _ ->
+    let n = List.length xs in
+    let k = ((k mod n) + n) mod n in
+    let rec split i acc ys =
+      if i = 0 then (List.rev acc, ys)
+      else match ys with
+        | [] -> (List.rev acc, [])
+        | h :: tl -> split (i - 1) (h :: acc) tl
+    in
+    let a, b = split k [] xs in
+    b @ a
+
+--- Count occurrences
+
+let count_occurrences (needle: string) (haystack: string list) : int =
+  let rec go acc xs =
+    match xs with
+    | [] -> acc
+    | h :: tl -> go (if h = needle then acc + 1 else acc) tl
+  in
+  go 0 haystack
+
+
+--nowa funkcja
+
+lista 2 zadanie 3
+
+Zadanie 3 (1p). Zdefiniuj funkcję generującą wszystkie sufiksy danej listy. Na przykład dla listy [1; 2;
+3] Twoja funkcja powinna zwrócić listę [[1; 2; 3]; [2; 3]; [3]; []]. Następnie, zdefiniuj funkcję
+generującą wszystkie prefiksy danej listy. Na przykład dla listy [1; 2; 3] Twoja funkcja powinna zwrócić
+listę [[]; [1]; [1; 2]; [1; 2; 3]].
+
+
+Suffixes & Prefixes
+
+
+let suffixes (xs: 'a list) : 'a list list =
+  failwith "todo"
+
+let prefixes (xs: 'a list) : 'a list list =
+  failwith "todo"
+
+
+json
+
+let open Yojson.Safe.Util in
+let xs = input |> member "xs" |> to_list |> List.map to_int in
+let j_list ys = `List (List.map (fun x -> `Int x) ys) in
+let j_ll yss = `List (List.map j_list yss) in
+`Assoc [
+  ("suffixes", j_ll (Solution.suffixes xs));
+  ("prefixes", j_ll (Solution.prefixes xs));
+]
+
+TEST
+
+complex xs
+
+0
+
+{"xs":[3,1,4,1,5,9,2,6]}
+
+{"suffixes":[[3,1,4,1,5,9,2,6],[1,4,1,5,9,2,6],[4,1,5,9,2,6],[1,5,9,2,6],[5,9,2,6],[9,2,6],[2,6],[6],[]],"prefixes":[[],[3],[3,1],[3,1,4],[3,1,4,1],[3,1,4,1,5],[3,1,4,1,5,9],[3,1,4,1,5,9,2],[3,1,4,1,5,9,2,6]]}
+
+ODP:
+
+let suffixes (xs: 'a list) : 'a list list =
+  let rec go acc ys =
+    match ys with
+    | [] -> List.rev ([] :: acc)
+    | _ :: tl -> go (ys :: acc) tl
+  in
+  go [] xs
+
+let prefixes (xs: 'a list) : 'a list list =
+  let rec go pref acc ys =
+    match ys with
+    | [] -> List.rev (List.rev pref :: acc)
+    | h :: tl -> go (h :: pref) (List.rev pref :: acc) tl
+  in
+  go [] [] xs

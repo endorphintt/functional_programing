@@ -1,155 +1,161 @@
-@use "../../styles/themed-mixins.module.scss" as *;
+@use '../../styles/themed-mixins.module.scss' as *;
 
 .page {
-  @include pageScroll;
-  @include container(980px, 16px);
-  padding-top: 18px;
-  padding-bottom: 24px;
+	@include pageScroll;
+	@include container(980px, 16px);
+	padding-top: 18px;
+	padding-bottom: 100px;
 }
 
 .top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 12px;
 }
 
 .h1 {
-  @include title(22px, 800);
-  @include textColor(#111, #fff);
+	@include title(22px, 800);
+	@include textColor(#111, #fff);
 }
 
 .sub {
-  @include subtleText();
-  font-size: 13px;
-  line-height: 1.35;
-  margin-top: 6px;
+	@include subtleText();
+	font-size: 13px;
+	line-height: 1.35;
+	margin-top: 6px;
 }
 
 .btn {
-  height: 36px;
-  padding: 0 12px;
-  border-radius: 18px;
-  font-weight: 800;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
+	height: 36px;
+	padding: 0 12px;
+	border-radius: 18px;
+	font-weight: 800;
+	font-size: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
 
-  border: 1px solid rgba(255,255,255,0.18);
-  backdrop-filter: blur(10px);
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	backdrop-filter: blur(10px);
 
-  @include theme(white) {
-    background: rgba(255,255,255,0.55);
-    color: #111;
-  }
+	@include theme(white) {
+		background: rgba(255, 255, 255, 0.55);
+		color: #111;
+	}
 
-  @include theme(black) {
-    background: rgba(255,255,255,0.10);
-    color: #fff;
-  }
+	@include theme(black) {
+		background: rgba(255, 255, 255, 0.1);
+		color: #fff;
+	}
 
-  @include ring();
+	@include ring();
 }
 
 .card {
-  margin-top: 14px;
-  @include surfaceCard(24px, 16px);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+	margin-top: 14px;
+	@include surfaceCard(24px, 16px);
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
 }
 
 .h2 {
-  margin-top: 2px;
-  font-weight: 950;
-  font-size: 13px;
-  @include textColor(#111, #fff);
+	margin-top: 2px;
+	font-weight: 950;
+	font-size: 13px;
+	@include textColor(#111, #fff);
 }
 
 .list {
-  display: grid;
-  gap: 10px;
+	display: grid;
+	gap: 10px;
 }
 
 .p {
-  @include surfacePanel(18px, 12px);
-  display: grid;
-  gap: 8px;
+	@include surfacePanel(18px, 12px);
+	display: grid;
+	gap: 8px;
 }
 
 .pMeta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
 }
 
 .pIndex {
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-weight: 900;
-  font-size: 11px;
-  @include glass(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.10), 0.18, 10px);
+	padding: 6px 10px;
+	border-radius: 999px;
+	font-weight: 900;
+	font-size: 11px;
+	@include glass(
+		rgba(255, 255, 255, 0.55),
+		rgba(255, 255, 255, 0.1),
+		0.18,
+		10px
+	);
 }
 
 .pBody {
-  @include textColor(#111, #fff);
-  font-size: 13px;
-  line-height: 1.55;
-  white-space: pre-wrap;
-  word-break: break-word;
+	@include textColor(#111, #fff);
+	font-size: 13px;
+	line-height: 1.55;
+	white-space: pre-wrap;
+	word-break: break-word;
 }
 
 .code {
-  border-radius: 16px;
-  padding: 12px;
-  border: 1px solid rgba(255,255,255,0.18);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 13px;
-  line-height: 1.45;
-  white-space: pre;
-  overflow-x: auto;
+	border-radius: 16px;
+	padding: 12px;
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+		'Liberation Mono', 'Courier New', monospace;
+	font-size: 13px;
+	line-height: 1.45;
+	white-space: pre;
+	overflow-x: auto;
 
-  @include theme(white) {
-    background: rgba(255,255,255,0.55);
-    color: #111;
-  }
+	@include theme(white) {
+		background: rgba(255, 255, 255, 0.55);
+		color: #111;
+	}
 
-  @include theme(black) {
-    background: rgba(255,255,255,0.10);
-    color: #fff;
-  }
+	@include theme(black) {
+		background: rgba(255, 255, 255, 0.1);
+		color: #fff;
+	}
 }
 
 .tasksGrid {
-  margin-top: 10px;
-  display: grid;
-  gap: 12px;
+	margin-top: 10px;
+	display: grid;
+	gap: 12px;
 
-  @media (min-width: 720px) {
-    grid-template-columns: 1fr 1fr;
-  }
+	@media (min-width: 720px) {
+		grid-template-columns: 1fr 1fr;
+	}
 }
 
 .taskCard {
-  @include surfacePanel(18px, 12px);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-height: 84px;
-  @include interactive(1px);
+	@include surfacePanel(18px, 12px);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-height: 84px;
+	@include interactive(1px);
 }
 
 .taskTitle {
-  @include textColor(#111, #fff);
-  font-weight: 900;
-  font-size: 13px;
+	@include textColor(#111, #fff);
+	font-weight: 900;
+	font-size: 13px;
 }
 
 .taskMeta {
-  @include subtleText();
-  font-size: 12px;
-  line-height: 1.35;
+	@include subtleText();
+	font-size: 12px;
+	line-height: 1.35;
 }

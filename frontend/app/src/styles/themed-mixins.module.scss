@@ -1,151 +1,195 @@
 @mixin theme($t) {
-  [data-theme="#{'' + $t}"] & {
-    @content;
-  }
+	[data-theme="#{'' + $t}"] & {
+		@content;
+	}
 }
 
 @mixin textColor($white, $black) {
-  @include theme(white) { color: $white; }
-  @include theme(black) { color: $black; }
+	@include theme(white) {
+		color: $white;
+	}
+	@include theme(black) {
+		color: $black;
+	}
 }
 
 @mixin bgColor($white, $black) {
-  @include theme(white) { background: $white; }
-  @include theme(black) { background: $black; }
+	@include theme(white) {
+		background: $white;
+	}
+	@include theme(black) {
+		background: $black;
+	}
 }
 
 @mixin borderColor($white, $black) {
-  @include theme(white) { border-color: $white; }
-  @include theme(black) { border-color: $black; }
+	@include theme(white) {
+		border-color: $white;
+	}
+	@include theme(black) {
+		border-color: $black;
+	}
 }
 
 @mixin ring($alpha: 0.7) {
-  &:focus-visible {
-    box-shadow: 0 0 0 2px rgba(120, 170, 255, $alpha);
-  }
+	&:focus-visible {
+		box-shadow: 0 0 0 2px rgba(120, 170, 255, $alpha);
+	}
 }
 
 @mixin motion($dur: 160ms) {
-  transition:
-    transform $dur ease,
-    background $dur ease,
-    border-color $dur ease,
-    box-shadow $dur ease,
-    opacity $dur ease,
-    filter $dur ease;
+	transition: transform $dur ease, background $dur ease,
+		border-color $dur ease, box-shadow $dur ease, opacity $dur ease,
+		filter $dur ease;
 }
 
 @mixin interactive($lift: 1px) {
-  @include motion();
-  @include ring();
-  &:hover { transform: translateY(-$lift); }
-  &:active { transform: translateY(0); }
+	@include motion();
+	@include ring();
+	&:hover {
+		transform: translateY(-$lift);
+	}
+	&:active {
+		transform: translateY(0);
+	}
 }
 
 @mixin glass(
-  $bgWhite: rgba(255, 255, 255, 0.55),
-  $bgBlack: rgba(255, 255, 255, 0.10),
-  $borderAlpha: 0.18,
-  $blur: 10px
+	$bgWhite: rgba(255, 255, 255, 0.55),
+	$bgBlack: rgba(255, 255, 255, 0.1),
+	$borderAlpha: 0.18,
+	$blur: 10px
 ) {
-  backdrop-filter: blur($blur);
-  border: 1px solid rgba(255, 255, 255, $borderAlpha);
-  @include theme(white) { background: $bgWhite; color: #111; }
-  @include theme(black) { background: $bgBlack; color: #fff; }
+	backdrop-filter: blur($blur);
+	border: 1px solid rgba(255, 255, 255, $borderAlpha);
+	@include theme(white) {
+		background: $bgWhite;
+		color: #111;
+	}
+	@include theme(black) {
+		background: $bgBlack;
+		color: #fff;
+	}
 }
 
 @mixin surfaceCard($radius: 24px, $padding: 16px) {
-  border-radius: $radius;
-  padding: $padding;
-  @include glass(rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.08), 0.18, 12px);
-  @include theme(white) { box-shadow: 0 18px 40px rgba(10, 16, 28, 0.10); }
-  @include theme(black) { box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45); }
+	border-radius: $radius;
+	padding: $padding;
+	@include glass(
+		rgba(255, 255, 255, 0.62),
+		rgba(255, 255, 255, 0.08),
+		0.18,
+		12px
+	);
+	@include theme(white) {
+		box-shadow: 0 18px 40px rgba(10, 16, 28, 0.1);
+	}
+	@include theme(black) {
+		box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
+	}
 }
 
 @mixin surfacePanel($radius: 20px, $padding: 14px) {
-  border-radius: $radius;
-  padding: $padding;
-  @include glass(rgba(255, 255, 255, 0.50), rgba(255, 255, 255, 0.10), 0.18, 10px);
-  @include theme(white) { box-shadow: 0 12px 28px rgba(10, 16, 28, 0.08); }
-  @include theme(black) { box-shadow: 0 16px 44px rgba(0, 0, 0, 0.40); }
+	border-radius: $radius;
+	padding: $padding;
+	@include glass(
+		rgba(255, 255, 255, 0.5),
+		rgba(255, 255, 255, 0.1),
+		0.18,
+		10px
+	);
+	@include theme(white) {
+		box-shadow: 0 12px 28px rgba(10, 16, 28, 0.08);
+	}
+	@include theme(black) {
+		box-shadow: 0 16px 44px rgba(0, 0, 0, 0.4);
+	}
 }
 
 @mixin iconBtn($size: 40px, $radius: 999px) {
-  width: $size;
-  height: $size;
-  border-radius: $radius;
-  display: flex;
-  flex: 0 0 $size;
-  align-items: center;
-  justify-content: center;
-  @include glass();
-  @include interactive(1px);
+	width: $size;
+	height: $size;
+	border-radius: $radius;
+	display: flex;
+	flex: 0 0 $size;
+	align-items: center;
+	justify-content: center;
+	@include glass();
+	@include interactive(1px);
 }
 
 @mixin pillBtn($h: 40px, $px: 14px, $radius: 999px) {
-  height: $h;
-  padding: 0 $px;
-  border-radius: $radius;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  @include glass();
-  @include interactive(1px);
+	height: $h;
+	padding: 0 $px;
+	border-radius: $radius;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	@include glass();
+	@include interactive(1px);
 }
 
 @mixin linkPill($radius: 12px) {
-  border-radius: $radius;
-  @include interactive(1px);
+	border-radius: $radius;
+	@include interactive(1px);
 }
 
 @mixin title($size: 18px, $weight: 700) {
-  font-size: $size;
-  font-weight: $weight;
-  letter-spacing: 0.2px;
+	font-size: $size;
+	font-weight: $weight;
+	letter-spacing: 0.2px;
 }
 
 @mixin subtleText() {
-  @include theme(white) { color: rgba(17, 17, 17, 0.72); }
-  @include theme(black) { color: rgba(255, 255, 255, 0.72); }
+	@include theme(white) {
+		color: rgba(17, 17, 17, 0.72);
+	}
+	@include theme(black) {
+		color: rgba(255, 255, 255, 0.72);
+	}
 }
 
 @mixin divider() {
-  @include theme(white) { border-color: rgba(17, 17, 17, 0.12); }
-  @include theme(black) { border-color: rgba(255, 255, 255, 0.14); }
+	@include theme(white) {
+		border-color: rgba(17, 17, 17, 0.12);
+	}
+	@include theme(black) {
+		border-color: rgba(255, 255, 255, 0.14);
+	}
 }
 
 @mixin container($max: 980px, $px: 16px) {
-  width: 100%;
-  max-width: $max;
-  margin: 0 auto;
-  padding: 0 $px;
+	width: 100%;
+	max-width: $max;
+	margin: 0 auto;
+	padding: 0 $px;
 }
 
 @mixin grid($cols: 3, $gap: 12px) {
-  display: grid;
-  grid-template-columns: repeat($cols, minmax(0, 1fr));
-  gap: $gap;
+	display: grid;
+	grid-template-columns: repeat($cols, minmax(0, 1fr));
+	gap: $gap;
 }
 
 @mixin responsiveGrid($min: 240px, $gap: 12px) {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax($min, 1fr));
-  gap: $gap;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax($min, 1fr));
+	gap: $gap;
 }
 
 @mixin noScrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+	-ms-overflow-style: none;
+	scrollbar-width: none;
 
-  &::-webkit-scrollbar {
-    display: none;
-  }
+	&::-webkit-scrollbar {
+		display: none;
+	}
 }
 
 @mixin pageScroll {
-  height: 100vh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  @include noScrollbar;
+	height: 100vh;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	@include noScrollbar;
 }
